@@ -12,19 +12,21 @@ def get_filenames(chemin_dossier: str) -> list[Path]:
 
 file_liste = get_filenames("TextesFinaux_txt")
 # print(file_liste)
-lexique = []
-for file in file_liste:
-    with open(file, 'r') as lecture_fichier:
-        lecture = lecture_fichier.readlines()
-        for line in lecture:
-            line = line.strip()
-            mots = nlp(line)
-            for mot in mots:
-                mot = mot.text.lower() #on recupp le text sinon probleme il recupère des attributs mots de spacy 
-                if mot not in lexique : 
-                    lexique.append(mot)
-                else : 
-                    pass
+def obtenir_lexique(file_liste):
+    lexique = []
+    for file in file_liste:
+        with open(file, 'r') as lecture_fichier:
+            lecture = lecture_fichier.readlines()
+            for line in lecture:
+                line = line.strip()
+                mots = nlp(line)
+                for mot in mots:
+                    mot = mot.text.lower() #on recupp le text sinon probleme il recupère des attributs mots de spacy 
+                    if mot not in lexique : 
+                        lexique.append(mot)
+                    else : 
+                        pass
+    return lexique
 
-print(lexique)
+# print(lexique)
 
