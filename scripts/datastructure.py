@@ -13,8 +13,15 @@ class Token:
 class Ligne:
     """Classe représentant une ligne du fichier de données."""
     texte: str
+    texte_corrige: str
     tokens: List[Token]
     categorie: str
     
 
-    
+@dataclass
+class Erreur:
+    """Classe représentant une erreur."""
+    mot_errone: str
+    ligne: int
+    pos_reel:str
+    pos_suppose:str
