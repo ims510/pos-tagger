@@ -28,7 +28,7 @@ def clean_lines(liste_lignes: List[Ligne]) -> List[Ligne]:
         ligne.texte = ligne.texte.replace("␣"," ")
         ligne.texte = ligne.texte.replace("⌫","~")
     return liste_lignes
-            
+
 
 file_list = get_filenames("TextesFinaux_txt")
 lexique = obtenir_lexique(file_list)
@@ -54,19 +54,19 @@ liste_erreurs = compare_data_lexique(liste_lignes, lexique)
 
 ###############################################################################
 
-def annotate_corpus(corpus: List[Ligne]) -> List[Ligne] : 
+def annotate_corpus(corpus: List[Ligne]) -> List[Ligne] :
     '''Ajoute les tokens à chaque ligne du corpus'''
     corpus_annote = []
-    for ligne in tqdm(corpus, desc="Annotation du corpus") : 
+    for ligne in tqdm(corpus, desc="Annotation du corpus") :
         tokens = nlp(ligne.texte)
         liste_tokens = []
-        for token in tokens : 
+        for token in tokens :
             token = Token(token.text, token.pos_, token.lemma_, "erreur")
             liste_tokens.append(token)
         ligne.tokens = liste_tokens
         corpus_annote.append(ligne)
     return(corpus_annote)
-        
+
 corpus_annote = annotate_corpus(liste_lignes)
 
 
@@ -85,16 +85,16 @@ burst = extract_burst('csv_planification.csv')
 
 
 
-def Ligne_burst(corpus: List[Ligne], burst: str) -> List[List] : 
+def Ligne_burst(corpus: List[Ligne], burst: str) -> List[List] :
     '''prend en entrée le corpus annoté et la liste de burst et ajoute le burst à chaque ligne'''
     # Convertir chaque Ligne en liste
     corpus_liste = []
-    for ligne in corpus : 
+    for ligne in tqdm(corpus, desc="Ajout du burst à chaque ligne") :
         ligne_liste = [ligne.texte, ligne.tokens, ligne.categorie]
         corpus_liste.append(ligne_liste)
     # Ajouter chaque burst à la ligne correspondante
     corpus_avec_burst = []
-    for i in range(len(corpus_liste)) : 
+    for i in range(len(corpus_liste)) :
         corpus_liste[i].append(burst[i])
         corpus_avec_burst.append(corpus_liste[i])
     return corpus_avec_burst
@@ -103,36 +103,69 @@ corpus_burst = Ligne_burst(corpus_annote, burst)
 
 
 
-def mots_colles_burst(corpus_avec_burst: List[List]) -> List[List] : 
+def mots_colles_burst(corpus_avec_burst: List[List]) -> List[List] :
     '''prend en entrée le corpus de lignes sous forme de listes avec le burst et immite les mots_colles dans le burst'''
     liste_burst = []
-    for ligne in corpus_avec_burst : 
+    for ligne in tqdm(corpus_avec_burst, desc="Collage des mots dans le burst") :
         burst = ligne[3]
-        liste_mots = burst.split()        
+        liste_mots = burst.split()
         coller_ligne = []
-        for i in range(len(liste_mots)-1) : 
+        for i in range(len(liste_mots)-1) :
             coller = liste_mots[i]+liste_mots[i+1]
             coller_ligne.append(coller)
         ligne[3] = coller_ligne
         liste_burst.append(ligne)
     return liste_burst
 
-corpus_avec_burst_colles = mots_colles_burst(corpus_burst)
+#corpus_avec_burst_colles = mots_colles_burst(corpus_burst)
 
 
 
-def detecter_mots_colles(corpus_burst_colles: List[List]) -> List[Ligne] : 
+def detecter_mots_colles(corpus_burst_colles: List[List]) -> List[Ligne] :
     '''détecte les mots collés dans les lignes sous forme de listes et renvoie toutes les lignes avec l'erreur "mots collés" si détecté'''
     corpus_erreur = []
-    for ligne in corpus_burst_colles : 
-        for token in ligne[1] : 
-            if token.texte in ligne[3] : 
+    for ligne in tqdm(corpus_burst_colles, desc="Détection des mots collés avec le mot suivant") :
+        for token in ligne[1] :
+            if token.texte in ligne[3] :
                 token.erreur = "mots collés"
-    for ligne_liste in corpus_burst_colles : 
+    for ligne_liste in corpus_burst_colles :
         ligne = Ligne(ligne_liste[0], ligne_liste[1], ligne_liste[2])
         corpus_erreur.append(ligne)
-    #print(corpus_erreur)
     return corpus_erreur
 
-corpus_mots_colles = detecter_mots_colles(corpus_avec_burst_colles)
+#corpus_mots_colles = detecter_mots_colles(corpus_avec_burst_colles)
 
+
+###############################################################################
+
+def mots_colles_premiere_lettre_burst(corpus_avec_burst: List[List]) -> List[List] :
+    '''prend en entrée le corpus de lignes sous forme de listes avec le burst et immite les mots_colles dans le burst'''
+    liste_burst = []
+    for ligne in tqdm(corpus_avec_burst, desc="Collage des mots avec la première lettre du mot suivant dans le burst") :
+        burst = ligne[3]
+        liste_mots = burst.split()
+        coller_ligne = []
+        for i in range(len(liste_mots)-1) :
+            coller = liste_mots[i]+liste_mots[i+1][0]
+            coller_ligne.append(coller)
+        ligne[3] = coller_ligne
+        liste_burst.append(ligne)
+    return liste_burst
+
+#corpus_avec_burst_colles_premiere_lettre = mots_colles_premiere_lettre_burst(corpus_burst)
+
+
+
+def detecter_mots_colles_premiere_lettre(corpus_burst_colles: List[List]) -> List[Ligne] :
+    '''détecte les mots collés dans les lignes sous forme de listes et renvoie toutes les lignes avec l'erreur "mots collés" si détecté'''
+    corpus_erreur = []
+    for ligne in tqdm(corpus_burst_colles, desc="Détection des mots collés avec la première lettre du mot suivant") :
+        for token in ligne[1] :
+            if token.texte in ligne[3] :
+                token.erreur = "mots collés à la première lettre du mot suivant"
+    for ligne_liste in corpus_burst_colles :
+        ligne = Ligne(ligne_liste[0], ligne_liste[1], ligne_liste[2])
+        corpus_erreur.append(ligne)
+    return corpus_erreur
+
+#corpus_mots_colles_premiere_lettre = detecter_mots_colles_premiere_lettre(corpus_avec_burst_colles_premiere_lettre)
