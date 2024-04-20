@@ -41,7 +41,7 @@ def add_burst_to_text(existing_text: str, burst: str, position: int) -> str:
                 cursor -= 1
         elif char == "⌦":
             if cursor < len(result) - 1:
-                result = result[:cursor] + result[cursor+1]
+                result = result[:cursor] + result[cursor+1:]
         elif char == "␣":
             result = result[:cursor] + " " + result[cursor:]
             cursor += 1
@@ -83,8 +83,8 @@ def deletion_within_word(line: Ligne) -> List[Token]:
 personnes = get_persons(liste_lignes)
 tokens: List[Token] = []
 
-# for list_lines in personnes.values():
-for list_lines in list(personnes.values())[:1]:
+for list_lines in personnes.values():
+# for list_lines in list(personnes.values())[:1]:
     running_text = list_lines[0].texte_simple
     tokens += deletion_within_word(list_lines[0])
 
@@ -122,7 +122,6 @@ for list_lines in list(personnes.values())[:1]:
                         token.pos_suppose = token.get_pos_suppose()
                         token.lemme = token.get_lemme()
                         tokens.append(token)
-                        # print(f"{list_lines[i].texte_simple} belongs to {word_before} -> {word_after}")
                     except IndexError:
                         print(list_lines[i].id, len(running_text), list_lines[i-1].doc_length, correction_position, list_lines[i].texte_simple)
                 elif list_lines[i].texte_complete == "␣":
@@ -204,7 +203,6 @@ for list_lines in list(personnes.values())[:1]:
                             token.pos_reel = token.pos_suppose
                             token.lemme = token.get_lemme()
                             tokens.append(token)
-                            # print(f"'{token.texte}' -> {token.details}")
                     else:
                         # if it's multiple words
                         words = list_lines[i].texte_simple.split()
@@ -225,7 +223,6 @@ for list_lines in list(personnes.values())[:1]:
                             token.pos_reel = token.pos_suppose
                             token.lemme = token.get_lemme()
                             tokens.append(token)
-                            # print(f"'{token.texte}' -> {token.details}")
                         pass
                 
 
@@ -233,6 +230,6 @@ for list_lines in list(personnes.values())[:1]:
         running_text = running_text_after
 
 for token in tokens:
-    print(f"ID {token.ligne.id}, n_burst {token.ligne.n_burst}: {token.texte} -> {token.correction} ({token.details})")
+    print(f'ID {token.ligne.id}, n_burst {token.ligne.n_burst}: "{token.texte}" -> "{token.correction}" ({token.details})')
 
 
