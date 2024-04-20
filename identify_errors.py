@@ -1,4 +1,4 @@
-from datastructure import Ligne, Token, Erreur
+from datastructure import Ligne, Token, Difference
 import csv
 from typing import List
 from creation_lexique import obtenir_lexique, get_filenames
@@ -13,7 +13,7 @@ def ouverture_csv(file : str) -> List[Ligne]:
         next(reader, None)
         liste_lignes = []
         for row in reader:
-            line = Ligne(texte_complete=row[16], texte_simple = row[11], tokens=[], categorie=row[15], start_position=int(row[12]), end_position=int(row[13]), doc_length=int(row[14]), id=row[0])
+            line = Ligne(texte_complete=row[16], texte_simple = row[11], categorie=row[15], start_position=int(row[12]), end_position=int(row[13]), doc_length=int(row[14]), id=row[0], n_burst=int(row[3]))
             liste_lignes.append(line)
         return liste_lignes
 
@@ -39,7 +39,7 @@ def compare_data_lexique(liste_lignes: List[Ligne], lexique: List[str]):
         mots_originaux = nlp(ligne.texte_complete)
         for mot in mots_originaux:
             if mot.text!=" " and mot.text.lower() not in lexique:
-                erreur = Erreur(mot, n, "Unknown", mot.pos_)
+                erreur = Difference(mot, n, "Unknown", mot.pos_)
                 liste_erreurs.append(erreur)
                 # print(f"{n}. Erreur : {mot}")
                 n += 1

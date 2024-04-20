@@ -1,8 +1,8 @@
 from identify_errors import ouverture_csv
-from datastructure import Ligne
+from datastructure import Ligne, Token
 from typing import List, Dict, Tuple
 
-liste_lignes = ouverture_csv("/Users/madalina/Documents/M1TAL/Enrichissement de corpus/Docs/csv_planification.csv")
+liste_lignes = ouverture_csv("/Users/madalina/Documents/M1TAL/Enrichissement de corpus/Docs/CLEAN_csv_planification.tsv")
 
 def get_persons(liste_lignes: List[Ligne]) -> Dict[str, List[Ligne]]:
     """Retourne une liste de dictionnaires, dont la clé est l'id et la valeur une liste de burts."""
@@ -18,6 +18,8 @@ def get_word(index: int, chaine: str) -> Tuple[str, int, int]:
     word_delimiters = [" ", ".", ",", ":", ";"]
     word_start = index
     word_end = index
+    if len(chaine) == 0:
+        return "", 0, 0
     while word_start > 0:
         if chaine[word_start-1] in word_delimiters:
             break
@@ -46,6 +48,7 @@ def add_burst_to_text(existing_text: str, burst: str, position: int) -> str:
     return result
 
 personnes = get_persons(liste_lignes)
+tokens = []
 for list_lines in personnes.values():
 # for list_lines in list(personnes.values())[:1]:
     running_text = list_lines[0].texte_simple
@@ -60,16 +63,108 @@ for list_lines in personnes.values():
 
         if list_lines[i].start_position != list_lines[i-1].end_position:
             correction_position = list_lines[i].start_position
-            if len(list_lines[i].texte_simple) == 1 and list_lines[i].texte_simple.isalpha():
-                # if it's just one letter
-                # print(list_lines[i].id, len(running_text), list_lines[i-1].doc_length, correction_position, list_lines[i].texte_simple)
-                try:
+            # if it's one character
+            if len(list_lines[i].texte_simple) == 1:
+                if list_lines[i].texte_simple.isalpha():
+                    # if it's just one letter
+                    # print(list_lines[i].id, len(running_text), list_lines[i-1].doc_length, correction_position, list_lines[i].texte_simple)
+                    try:
+                        word_before, start_of_word, _ = get_word(correction_position, running_text)
+                        word_after, _, _ = get_word(start_of_word, running_text_after)
+                        token = Token(
+                            texte=list_lines[i].texte_simple,
+                            pos_suppose="",
+                            lemme=" ",
+                            erreur=True,
+                            details=f"Single letter belonging to {word_before}",
+                            pos_reel="Unknown",
+                            correction=word_after,
+                            ligne=list_lines[i]
+                        )
+                        token.pos_suppose = token.get_pos_suppose()
+                        token.lemme = token.get_lemme()
+                        tokens.append(token)
+                        # print(f"{list_lines[i].texte_simple} belongs to {word_before} -> {word_after}")
+                    except IndexError:
+                        print(list_lines[i].id, len(running_text), list_lines[i-1].doc_length, correction_position, list_lines[i].texte_simple)
+                elif list_lines[i].texte_complete == "␣":
+                    # if it's a space
                     word_before, start_of_word, _ = get_word(correction_position, running_text)
                     word_after, _, _ = get_word(start_of_word, running_text_after)
-                    print(f"{list_lines[i].texte_simple} belongs to {word_before} -> {word_after}")
-                except IndexError:
-                    print(list_lines[i].id, len(running_text), list_lines[i-1].doc_length, correction_position, list_lines[i].texte_simple)
-        # Update text for next iteration
+                    token = Token(
+                        texte=list_lines[i].texte_simple,
+                        pos_suppose="",
+                        lemme=" ",
+                        erreur=True,
+                        details=f"Space belonging to {word_before}",
+                        pos_reel="SPACE",
+                        correction=word_after,
+                        ligne=list_lines[i]
+                    )
+                    token.pos_suppose = token.get_pos_suppose()
+                    token.lemme = token.get_lemme()
+                    tokens.append(token)
+            else:
+                # if it's multiple characters
+                string_length = len(list_lines[i].texte_complete)
+                if list_lines[i].texte_complete == "⌫" * string_length:
+                    # if it's just backspaces on the entire line
+                    word_before, start_of_word, _ = get_word(correction_position, running_text)
+                    word_after, _, _ = get_word(correction_position - string_length, running_text_after)
+                    deleted_string = running_text[correction_position - string_length:correction_position]
+                    token = Token(
+                        texte=list_lines[i].texte_simple,
+                        pos_suppose="",
+                        lemme=" ",
+                        erreur=True,
+                        details=f"{string_length} backspaces deleting '{deleted_string}'", #### ASK ABOUT THIS: do we need the pos/lemma of the deleted string?
+                        pos_reel="BACKSPACE",
+                        correction=word_after,
+                        ligne=list_lines[i]
+                    )
+                    token.pos_suppose = token.get_pos_suppose()
+                    token.lemme = token.get_lemme()
+                    tokens.append(token)
+                    print(f"{token.details}")
+                # else:
+                #     # if multiple words are added
+                #     word_before, start_of_word, end_of_word = get_word(correction_position, running_text)
+                #     word_after, _, _ = get_word(start_of_word, running_text_after)
+                #     token = Token(
+                #         texte=list_lines[i].texte_simple,
+                #         pos_suppose="",
+                #         lemme=" ",
+                #         erreur=True,
+                #         details=f"Multiple words belonging to {word_before}",
+                #         pos_reel="Unknown",
+                #         correction=word_after,
+                #         ligne=list_lines[i]
+                #     )
+                #     token.pos_suppose = token.get_pos_suppose()
+                #     token.lemme = token.get_lemme()
+                #     tokens.append(token)
+                #     print(f"{list_lines[i].texte_complete} belongs to {word_before} -> {word_before} {list_lines[i].texte_simple} {word_after}, {list_lines[i].id}, {list_lines[i].n_burst}")
+                # else:
+                # # if it's a word
+                #     word_before, start_of_word, _ = get_word(correction_position, running_text)
+                #     word_after, _, _ = get_word(start_of_word, running_text_after)
+                #     token = Token(
+                #         texte=list_lines[i].texte_simple,
+                #         pos_suppose="",
+                #         lemme=" ",
+                #         erreur=True,
+                #         details=f"Word belonging to {word_before}",
+                #         pos_reel="Unknown",
+                #         correction=word_after,
+                #         ligne=list_lines[i]
+                #     )
+                #     token.pos_suppose = token.get_pos_suppose()
+                #     token.lemme = token.get_lemme()
+                #     tokens.append(token)
+                # print(f"{list_lines[i].texte_simple} belongs to {word_before} -> {word_after}")
+                
+
+        # Update text for next iteration
         running_text = running_text_after
 
 
