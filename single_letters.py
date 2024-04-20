@@ -61,10 +61,10 @@ for list_lines in personnes.values():
         # Add this line to the document text so far
         running_text_after = add_burst_to_text(running_text, list_lines[i].texte_complete, list_lines[i].start_position)
 
-        if list_lines[i].start_position != list_lines[i-1].end_position:
+        if list_lines[i].start_position != list_lines[i-1].end_position and list_lines[i].start_position != len(running_text):
             correction_position = list_lines[i].start_position
             # if it's one character
-            if len(list_lines[i].texte_simple) == 1:
+            if len(list_lines[i].texte_simple.strip()) == 1:
                 if list_lines[i].texte_simple.isalpha():
                     # if it's just one letter
                     # print(list_lines[i].id, len(running_text), list_lines[i-1].doc_length, correction_position, list_lines[i].texte_simple)
@@ -125,8 +125,52 @@ for list_lines in personnes.values():
                     token.pos_suppose = token.get_pos_suppose()
                     token.lemme = token.get_lemme()
                     tokens.append(token)
-                    print(f"{token.details}")
-                # else:
+                elif len(list_lines[i].texte_simple) > 0:
+                    # if it's a word
+        
+                    begins_with_space = list_lines[i].texte_simple[0] == " "
+                    ends_with_space = list_lines[i].texte_simple[-1] == " "
+                    inserted_after_space = running_text[correction_position - 1] == " "
+                    inserted_before_space = running_text[correction_position] == " "
+                    if len(list_lines[i].texte_simple.split()) == 1:
+                        # if it's one word
+                        if (begins_with_space or inserted_after_space) and (ends_with_space or inserted_before_space):
+                            previous_word, _, _ = get_word(correction_position - 1, running_text)
+                            next_word, _, _ = get_word(correction_position+1, running_text)
+                            token = Token(
+                                texte=list_lines[i].texte_simple,
+                                pos_suppose="",
+                                lemme=" ",
+                                erreur=True,
+                                details=f"Word inserted between '{previous_word}' and '{next_word}'",
+                                pos_reel= "",
+                                correction=list_lines[i].texte_simple,
+                                ligne=list_lines[i]
+                            )
+                            token.pos_suppose = token.get_pos_suppose()
+                            token.pos_reel = token.pos_suppose
+                            token.lemme = token.get_lemme()
+                            tokens.append(token)
+                            print(f"'{token.texte}' -> {token.details}")
+
+                    else:
+                        # if it's multiple words
+                        pass
+                    # word_before, start_of_word, _ = get_word(correction_position, running_text)
+                    # word_after, _, _ = get_word(start_of_word, running_text_after)
+                    # token = Token(
+                    #     texte=list_lines[i].texte_simple,
+                    #     pos_suppose="",
+                    #     lemme=" ",
+                    #     erreur=True,
+                    #     details=f"Word belonging to {word_before}",
+                    #     pos_reel="Unknown",
+                    #     correction=word_after,
+                    #     ligne=list_lines[i]
+                    # )
+                    # token.pos_suppose = token.get_pos_suppose()
+                    # token.lemme = token.get_lemme()
+                    # tokens.append(token)
                 #     # if multiple words are added
                 #     word_before, start_of_word, end_of_word = get_word(correction_position, running_text)
                 #     word_after, _, _ = get_word(start_of_word, running_text_after)
@@ -146,21 +190,7 @@ for list_lines in personnes.values():
                 #     print(f"{list_lines[i].texte_complete} belongs to {word_before} -> {word_before} {list_lines[i].texte_simple} {word_after}, {list_lines[i].id}, {list_lines[i].n_burst}")
                 # else:
                 # # if it's a word
-                #     word_before, start_of_word, _ = get_word(correction_position, running_text)
-                #     word_after, _, _ = get_word(start_of_word, running_text_after)
-                #     token = Token(
-                #         texte=list_lines[i].texte_simple,
-                #         pos_suppose="",
-                #         lemme=" ",
-                #         erreur=True,
-                #         details=f"Word belonging to {word_before}",
-                #         pos_reel="Unknown",
-                #         correction=word_after,
-                #         ligne=list_lines[i]
-                #     )
-                #     token.pos_suppose = token.get_pos_suppose()
-                #     token.lemme = token.get_lemme()
-                #     tokens.append(token)
+
                 # print(f"{list_lines[i].texte_simple} belongs to {word_before} -> {word_after}")
                 
 
