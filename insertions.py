@@ -156,42 +156,6 @@ for list_lines in personnes.values():
                     else:
                         # if it's multiple words
                         pass
-                    # word_before, start_of_word, _ = get_word(correction_position, running_text)
-                    # word_after, _, _ = get_word(start_of_word, running_text_after)
-                    # token = Token(
-                    #     texte=list_lines[i].texte_simple,
-                    #     pos_suppose="",
-                    #     lemme=" ",
-                    #     erreur=True,
-                    #     details=f"Word belonging to {word_before}",
-                    #     pos_reel="Unknown",
-                    #     correction=word_after,
-                    #     ligne=list_lines[i]
-                    # )
-                    # token.pos_suppose = token.get_pos_suppose()
-                    # token.lemme = token.get_lemme()
-                    # tokens.append(token)
-                #     # if multiple words are added
-                #     word_before, start_of_word, end_of_word = get_word(correction_position, running_text)
-                #     word_after, _, _ = get_word(start_of_word, running_text_after)
-                #     token = Token(
-                #         texte=list_lines[i].texte_simple,
-                #         pos_suppose="",
-                #         lemme=" ",
-                #         erreur=True,
-                #         details=f"Multiple words belonging to {word_before}",
-                #         pos_reel="Unknown",
-                #         correction=word_after,
-                #         ligne=list_lines[i]
-                #     )
-                #     token.pos_suppose = token.get_pos_suppose()
-                #     token.lemme = token.get_lemme()
-                #     tokens.append(token)
-                #     print(f"{list_lines[i].texte_complete} belongs to {word_before} -> {word_before} {list_lines[i].texte_simple} {word_after}, {list_lines[i].id}, {list_lines[i].n_burst}")
-                # else:
-                # # if it's a word
-
-                # print(f"{list_lines[i].texte_simple} belongs to {word_before} -> {word_after}")
                 
 
         # Update text for next iteration
