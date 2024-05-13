@@ -50,7 +50,10 @@ class Token:
     pos_suppose: str
     lemme: str
     erreur: bool
-    details: str
+    #details: str
+    categ: str 
+    longueur: int
+    contexte: str
     pos_reel: str
     correction: str
     ligne: Ligne

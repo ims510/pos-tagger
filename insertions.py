@@ -2,8 +2,9 @@ from identify_errors import ouverture_csv
 from datastructure import Ligne, Token
 from typing import List, Dict, Tuple
 import csv
+from tqdm import tqdm
 
-liste_lignes = ouverture_csv("/Users/madalina/Documents/M1TAL/Enrichissement de corpus/Docs/CLEAN_csv_planification.tsv")
+liste_lignes = ouverture_csv("CLEAN_csv_planification.tsv")
 
 def get_persons(liste_lignes: List[Ligne]) -> Dict[str, List[Ligne]]:
     """Retourne une liste de dictionnaires, dont la clé est l'id et la valeur une liste de burts."""
@@ -55,12 +56,14 @@ def deletion_within_word(line: Ligne) -> List[Token]:
     """Returns a list of tokens where characters have been deleted within a word."""
     list_tokens = []
     line_words = line.texte_complete.split("␣")
-    for line_word in line_words:
+    for line_word in line_words :
+        n = 0
         if "⌫" in line_word[1:-1] and len(line_word) > 1:
             formed_word = ""
             for char in line_word:
                 if char == "⌫":
                     formed_word = formed_word[:-1]
+                    n += 1
                 elif char == "⌦":
                     pass
                 else:
@@ -70,7 +73,12 @@ def deletion_within_word(line: Ligne) -> List[Token]:
                 pos_suppose="",
                 lemme="",
                 erreur=True,
-                details="Suppression de caractères à l'intérieur d'un mot",
+                
+                #details="Suppression de caractères à l'intérieur d'un mot",
+                categ = "Suppression de caractères à l'intérieur d'un mot",
+                longueur = n,
+                contexte = formed_word,
+                
                 pos_reel="Unknown",
                 correction=formed_word,
                 ligne=line
@@ -84,20 +92,20 @@ def deletion_within_word(line: Ligne) -> List[Token]:
 personnes = get_persons(liste_lignes)
 tokens: List[Token] = []
 
-for list_lines in personnes.values():
+for list_lines in tqdm(personnes.values(), desc="Identification des erreurs") :
 # for list_lines in list(personnes.values())[:1]:
     running_text = list_lines[0].texte_simple
     tokens += deletion_within_word(list_lines[0])
 
     for i in range(1,len(list_lines)):
         
-        # Fix issue where some start positions are after the end of the text
+        # Fix issue where some start positions are after the end of the text
         if list_lines[i].start_position > list_lines[i-1].doc_length:
             list_lines[i].start_position = list_lines[i-1].doc_length
         
         tokens += deletion_within_word(list_lines[i])
 
-        # Add this line to the document text so far
+        # Add this line to the document text so far
         running_text_after = add_burst_to_text(running_text, list_lines[i].texte_complete, list_lines[i].start_position)
 
         if list_lines[i].start_position != list_lines[i-1].end_position and list_lines[i].start_position != len(running_text):
@@ -115,7 +123,12 @@ for list_lines in personnes.values():
                             pos_suppose="",
                             lemme=" ",
                             erreur=True,
-                            details=f'Lettre unique appartenant à "{word_before}"',
+                            
+                            #details=f'Lettre unique appartenant à "{word_before}"',
+                            categ = "Lettre unique ajoutée",
+                            longueur = 1,
+                            contexte = word_before,
+                            
                             pos_reel="Unknown",
                             correction=word_after,
                             ligne=list_lines[i]
@@ -134,7 +147,12 @@ for list_lines in personnes.values():
                         pos_suppose="",
                         lemme=" ",
                         erreur=True,
-                        details=f'Epace appartenant à "{word_before}"',
+                        
+                        #details=f'Epace appartenant à "{word_before}"',
+                        categ = "Espace ajouté",
+                        longueur = 1,
+                        contexte = word_before,
+                        
                         pos_reel="SPACE",
                         correction=word_after,
                         ligne=list_lines[i]
@@ -154,7 +172,12 @@ for list_lines in personnes.values():
                         pos_suppose="",
                         lemme=" ",
                         erreur=True,
-                        details=f"{string_length} backspaces supprimant '{deleted_string}'", #### ASK ABOUT THIS: do we need the pos/lemma of the deleted string?
+                        
+                        #details=f"{string_length} backspaces supprimant '{deleted_string}'", #### ASK ABOUT THIS: do we need the pos/lemma of the deleted string?
+                        categ = "Backspaces supprimant une chaîne",
+                        longueur = string_length,
+                        contexte = deleted_string,
+                        
                         pos_reel="BACKSPACE",
                         correction=word_after,
                         ligne=list_lines[i]
@@ -171,7 +194,12 @@ for list_lines in personnes.values():
                         pos_suppose="",
                         lemme=" ",
                         erreur=True,
-                        details=f"{string_length} delete (⌦) supprimant '{deleted_string}'", #### ASK ABOUT THIS: do we need the pos/lemma of the deleted string?
+                        
+                        #details=f"{string_length} delete (⌦) supprimant '{deleted_string}'", #### ASK ABOUT THIS: do we need the pos/lemma of the deleted string?
+                        categ = "Deletes supprimant une chaîne",
+                        longueur = string_length,
+                        contexte = deleted_string,
+                        
                         pos_reel="DELETE",
                         correction=word_after,
                         ligne=list_lines[i]
@@ -195,7 +223,12 @@ for list_lines in personnes.values():
                                 pos_suppose="",
                                 lemme=" ",
                                 erreur=True,
-                                details=f"Mot inseré entre '{previous_word}' et '{next_word}'",
+                                
+                                #details=f"Mot inseré entre '{previous_word}' et '{next_word}'",
+                                categ = "Mot inséré entre deux mots",
+                                longueur = len(list_lines[i].texte_simple),
+                                contexte = f"{previous_word} ; {next_word}",
+                                
                                 pos_reel= "",
                                 correction=f"{previous_word}{list_lines[i].texte_simple}{next_word}",
                                 ligne=list_lines[i]
@@ -215,7 +248,12 @@ for list_lines in personnes.values():
                                 pos_suppose="",
                                 lemme=" ",
                                 erreur=True,
-                                details=f"Partie de la chaine '{list_lines[i].texte_simple}' inserée entre '{previous_word}' et '{next_word}'",
+                                
+                                #details=f"Partie de la chaine '{list_lines[i].texte_simple}' inserée entre '{previous_word}' et '{next_word}'",
+                                categ = "Partie d'une chaîne insérée entre deux mots",
+                                longueur = len(list_lines[i].texte_simple),
+                                contexte = f"{previous_word} ; {next_word}",
+                                
                                 pos_reel= "",
                                 correction=f"{previous_word}{list_lines[i].texte_simple}{next_word}",
                                 ligne=list_lines[i]
@@ -230,11 +268,11 @@ for list_lines in personnes.values():
         # Update text for next iteration
         running_text = running_text_after
 
-with open ("final_result.csv", "w") as f:
+with open ("resultat_annotation_erreurs.csv", "w") as f:
     writer = csv.writer(f)
-    writer.writerow(["Id", "n_burst", "Token_texte", "POS Supposé", "Pos réel", "Lemme", "Erreur", "Details", "Correction"])
+    writer.writerow(["Id", "n_burst", "Token_texte", "POS Supposé", "Pos réel", "Lemme", "Erreur", "Catégorie", "Longueur", "Contexte", "Correction"])
     for token in tokens:
-        writer.writerow([token.ligne.id, token.ligne.n_burst, token.texte, token.pos_suppose, token.pos_reel, token.lemme, token.erreur, token.details, token.correction])
+        writer.writerow([token.ligne.id, token.ligne.n_burst, token.texte, token.pos_suppose, token.pos_reel, token.lemme, token.erreur, token.categ, token.longueur, token.contexte, token.correction])
 
 
 

@@ -26,7 +26,6 @@ def clean_lines(liste_lignes: List[Ligne]) -> List[Ligne]:
     """Nettoie les lignes de la liste."""
     for ligne in liste_lignes:
         ligne.texte_complete = ligne.texte_complete.replace("␣"," ")
-        ligne.texte_complete = ligne.texte_complete.replace("⌫","~")
     return liste_lignes
             
 
@@ -46,8 +45,8 @@ def compare_data_lexique(liste_lignes: List[Ligne], lexique: List[str]):
     return liste_erreurs
 
 def main():
-    liste_lignes = ouverture_csv("/Users/madalina/Documents/M1TAL/Enrichissement de corpus/Docs/csv_planification.csv")
-    file_list = get_filenames("22032024/TextesFinaux_txt")
+    liste_lignes = ouverture_csv("csv_planification.csv")
+    file_list = get_filenames("TextesFinaux_txt")
     lexique = obtenir_lexique(file_list)
     liste_lignes = clean_lines(liste_lignes)
 
