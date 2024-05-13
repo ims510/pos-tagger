@@ -26,14 +26,33 @@ class Difference:
 @dataclass
 class Ligne:
     """Classe représentant une ligne du fichier de données."""
-    texte_complete: str
+    '''texte_complete: str
     texte_simple: str # texte sans les caracteres de supprime, et qui a les caracteres supprimés
     categorie: str
     start_position: int
     end_position: int
     doc_length: int
     id: str
+    n_burst: int'''
+    
+    ID: str
+    charge: str
+    outil: str
     n_burst: int
+    debut_burst: float
+    duree_burst: float
+    duree_pause: float
+    duree_cycle: float
+    pct_burst: float
+    pct_pause: float
+    longueur_burst: int
+    burst: str
+    startPos	: str
+    endPos: str
+    docLength: int
+    categ: str
+    charBurst: str
+    ratio: float
 
     # def get_tokens(self):
     #     """Retourne les tokens de la ligne."""
@@ -50,7 +69,6 @@ class Token:
     pos_suppose: str
     lemme: str
     erreur: bool
-    #details: str
     categ: str 
     longueur: int
     contexte: str

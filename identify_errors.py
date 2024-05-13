@@ -13,8 +13,32 @@ def ouverture_csv(file : str) -> List[Ligne]:
         next(reader, None)
         liste_lignes = []
         for row in reader:
-            line = Ligne(texte_complete=row[16], texte_simple = row[11], categorie=row[15], start_position=int(row[12]), end_position=int(row[13]), doc_length=int(row[14]), id=row[0], n_burst=int(row[3]))
+            
+            #line = Ligne(texte_complete=row[16], texte_simple = row[11], categorie=row[15], start_position=int(row[12]), end_position=int(row[13]), doc_length=int(row[14]), id=row[0], n_burst=int(row[3]))
+            
+            line = Ligne(
+                ID=row[0], 
+                charge=row[1], 
+                outil=row[2], 
+                n_burst=int(row[3]), 
+                debut_burst=float(row[4].replace(',', '.')) if row[4] else None, 
+                duree_burst=float(row[5].replace(',', '.')) if row[5] else None, 
+                duree_pause=float(row[6].replace(',', '.')) if row[6] else None, 
+                duree_cycle=float(row[7].replace(',', '.')) if row[7] else None, 
+                pct_burst=float(row[8].replace(',', '.')) if row[8] else None, 
+                pct_pause=float(row[9].replace(',', '.')) if row[9] else None, 
+                longueur_burst=int(row[10]), 
+                burst=row[11], 
+                startPos=int(row[12]), 
+                endPos=int(row[13]), 
+                docLength=int(row[14]), 
+                categ=row[15], 
+                charBurst=row[16], 
+                ratio=float(row[17].replace(',', '.')) if row[17] else None
+                )
+            
             liste_lignes.append(line)
+                
         return liste_lignes
 
         # next(reader)
@@ -45,7 +69,7 @@ def compare_data_lexique(liste_lignes: List[Ligne], lexique: List[str]):
     return liste_erreurs
 
 def main():
-    liste_lignes = ouverture_csv("csv_planification.csv")
+    liste_lignes = ouverture_csv("CLEAN_csv_planification.tsv")
     file_list = get_filenames("TextesFinaux_txt")
     lexique = obtenir_lexique(file_list)
     liste_lignes = clean_lines(liste_lignes)
