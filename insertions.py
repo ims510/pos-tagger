@@ -270,7 +270,7 @@ for list_lines in tqdm(personnes.values(), desc="Identification des erreurs") :
         # Update text for next iteration
         running_text = running_text_after
 
-with open ("resultat_annotation_erreurs.csv", "w") as f:
+with open ("annotation_erreurs_treetagger.csv", "w") as f:
     writer = csv.writer(f)
     #writer.writerow(["Id", "n_burst", "Token_texte", "POS Supposé", "Pos réel", "Lemme", "Erreur", "Catégorie", "Longueur", "Contexte", "Correction"])
     writer.writerow(['ID', 

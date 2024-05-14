@@ -1,7 +1,15 @@
 from dataclasses import dataclass
 from typing import List
-import spacy
+import treetaggerwrapper
 
+# Spécifier le chemin vers les fichiers TreeTagger
+TAGGER_PATH = '/home/amandine/Tagger'
+
+# Initialisation de TreeTagger
+tagger = treetaggerwrapper.TreeTagger(TAGLANG='fr', TAGDIR=TAGGER_PATH)
+
+
+import spacy
 nlp = spacy.load("fr_core_news_sm")
 
 @dataclass
@@ -13,28 +21,10 @@ class Difference:
     pos_suppose:str
  
 
-# @dataclass
-# class Token:
-#     """Classe représentant un token du fichier de données."""
-#     texte: str
-#     pos_auto: str
-#     lemme: str
-#     erreur: Erreur
-#     ligne: Ligne
-
 
 @dataclass
 class Ligne:
     """Classe représentant une ligne du fichier de données."""
-    '''texte_complete: str
-    texte_simple: str # texte sans les caracteres de supprime, et qui a les caracteres supprimés
-    categorie: str
-    start_position: int
-    end_position: int
-    doc_length: int
-    id: str
-    n_burst: int'''
-    
     ID: str
     charge: str
     outil: str
@@ -54,12 +44,6 @@ class Ligne:
     charBurst: str
     ratio: float
 
-    # def get_tokens(self):
-    #     """Retourne les tokens de la ligne."""
-    #     doc = nlp(self.texte_simple)
-    #     for token in doc:
-    #         self.tokens.append(Token(token.text, token.pos_, token.lemma_, False))
-    #     return self.tokens
 
 
 @dataclass
@@ -76,11 +60,18 @@ class Token:
     correction: str
     ligne: Ligne
 
-    def get_pos_suppose(self):
+    '''def get_pos_suppose(self):
         """Retourne la pos supposée."""
         doc = nlp(self.texte)
         for token in doc:
             self.pos_suppose = token.pos_
+        return self.pos_suppose'''
+    
+    def get_pos_suppose(self):
+        """Retourne la POS (partie du discours) avec TreeTagger."""
+        tags = tagger.tag_text(self.texte)
+        if tags:
+            self.pos_suppose = tags[0].split('\t')[1] if len(tags[0].split('\t')) >= 2 else ''
         return self.pos_suppose
 
     def get_lemme(self):
@@ -89,3 +80,14 @@ class Token:
         for token in doc:
             self.lemme = token.lemma_
         return self.lemme
+    
+    '''def get_lemme(self):
+        """Retourne le lemme avec TreeTagger."""
+        tags = tagger.tag_text(self.texte)
+        if tags:
+            self.lemme = tags[0].split('\t')[2] if len(tags[0].split('\t')) >= 3 else ''
+        return self.lemme'''
+
+
+
+

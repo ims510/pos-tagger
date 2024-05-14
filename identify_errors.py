@@ -2,8 +2,24 @@ from datastructure import Ligne, Token, Difference
 import csv
 from typing import List
 from creation_lexique import obtenir_lexique, get_filenames
-import spacy
 
+
+'''import nltk
+from nltk.tokenize import word_tokenize
+nltk.download('punkt')
+
+
+import treetaggerwrapper
+
+# Spécifier le chemin vers les fichiers TreeTagger
+TAGGER_PATH = '/home/amandine/Tagger'
+
+# Initialisation de TreeTagger
+tagger = treetaggerwrapper.TreeTagger(TAGLANG='fr', TAGDIR=TAGGER_PATH)
+
+'''
+
+import spacy
 nlp = spacy.load("fr_core_news_sm")
 
 def ouverture_csv(file : str) -> List[Ligne]:
@@ -14,7 +30,7 @@ def ouverture_csv(file : str) -> List[Ligne]:
         liste_lignes = []
         for row in reader:
             
-            #line = Ligne(texte_complete=row[16], texte_simple = row[11], categorie=row[15], start_position=int(row[12]), end_position=int(row[13]), doc_length=int(row[14]), id=row[0], n_burst=int(row[3]))
+            #line = Ligne(charBurst=row[16], texte_simple = row[11], categorie=row[15], start_position=int(row[12]), end_position=int(row[13]), doc_length=int(row[14]), id=row[0], n_burst=int(row[3]))
             
             line = Ligne(
                 ID=row[0], 
@@ -49,7 +65,7 @@ def ouverture_csv(file : str) -> List[Ligne]:
 def clean_lines(liste_lignes: List[Ligne]) -> List[Ligne]:
     """Nettoie les lignes de la liste."""
     for ligne in liste_lignes:
-        ligne.texte_complete = ligne.texte_complete.replace("␣"," ")
+        ligne.charBurst = ligne.charBurst.replace("␣"," ")
     return liste_lignes
             
 
@@ -59,7 +75,10 @@ def compare_data_lexique(liste_lignes: List[Ligne], lexique: List[str]):
     n = 0
     liste_erreurs = []
     for ligne in liste_lignes:
-        mots_originaux = nlp(ligne.texte_complete)
+        mots_originaux = nlp(ligne.charBurst)
+        mots_originaux = ligne.charBurst.split()
+        
+        
         for mot in mots_originaux:
             if mot.text!=" " and mot.text.lower() not in lexique:
                 erreur = Difference(mot, n, "Unknown", mot.pos_)
@@ -67,6 +86,30 @@ def compare_data_lexique(liste_lignes: List[Ligne], lexique: List[str]):
                 # print(f"{n}. Erreur : {mot}")
                 n += 1
     return liste_erreurs
+
+
+'''def compare_data_lexique(liste_lignes: List[Ligne], lexique: List[str]):
+    """Compare les données avec le lexique et retourne une liste d'erreurs."""
+    n = 0
+    liste_erreurs = []
+    for ligne in liste_lignes:
+        charburst = ligne.charBurst
+        
+        
+        #tokens = word_tokenize(charburst)
+        tokens = nlp(charburst)
+        
+        
+        for token in tokens :
+            print(token)
+            if token!=" " and token.lower() not in lexique:
+                erreur = Difference(token, n, "Unknown", 'pos')
+                liste_erreurs.append(erreur)
+                # print(f"{n}. Erreur : {mot}")
+                n += 1
+    return liste_erreurs
+'''
+
 
 def main():
     liste_lignes = ouverture_csv("CLEAN_csv_planification.tsv")
