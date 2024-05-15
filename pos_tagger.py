@@ -3,8 +3,18 @@ from datastructure import Ligne, Token
 from typing import List, Dict, Tuple
 import csv
 from tqdm import tqdm
+import argparse
 
-liste_lignes = ouverture_csv("CLEAN_csv_planification.tsv")
+
+# Gérer les arguments
+parser = argparse.ArgumentParser(description="Identification des erreurs")
+parser.add_argument("-i", "--input-file", type=str, default="../data/CLEAN_csv_planification.tsv", help="Chemin du fichier csv d'entrée")
+parser.add_argument("-o", "--output-file", type=str, default="../data/annotation_erreurs_treetagger.csv", help="Chemin du fichier csv de sortie")
+args = parser.parse_args()
+
+
+liste_lignes = ouverture_csv(args.input_file)
+
 
 def get_persons(liste_lignes: List[Ligne]) -> Dict[str, List[Ligne]]:
     """Retourne une liste de dictionnaires, dont la clé est l'id et la valeur une liste de burts."""
@@ -270,7 +280,7 @@ for list_lines in tqdm(personnes.values(), desc="Identification des erreurs") :
         # Update text for next iteration
         running_text = running_text_after
 
-with open ("annotation_erreurs_treetagger.csv", "w") as f:
+with open (args.output_file, "w") as f:
     writer = csv.writer(f)
     #writer.writerow(["Id", "n_burst", "Token_texte", "POS Supposé", "Pos réel", "Lemme", "Erreur", "Catégorie", "Longueur", "Contexte", "Correction"])
     writer.writerow(['ID', 
