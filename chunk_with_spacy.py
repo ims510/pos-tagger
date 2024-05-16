@@ -1,109 +1,35 @@
 """Ce script propose un chunking avec Spacy"""
 
 
-from dataclasses import dataclass
+
+from datastructures_chunking import Mot, Phrase, extraire_syntagmes
 from typing import List
 import csv
 import spacy
 nlp = spacy.load('fr_core_news_sm')
 
 
-@dataclass
-class Mot:
-    """
-    classe qui représente un mot
 
-    Attributes
-    ----------
-    ID : int
-        position du mot dans la phrase
-    forme : str
-        mot lui-même
-    pos : str
-        partie du discours du mot
-    lemme : str
-        lemme du mot
-    deprel : str
-        relation de dépendance du mot avec son gouverneur
-    gouv : str
-        gouverneur du mot
-    syntagmes : List
-        liste des syntagmes auquel appartient le mot
-    """
-    ID: int
-    forme: str
-    pos: str
-    lemme: str
-    deprel: str
-    gouv: str
-    syntagmes: List[str]
-
-
-def extraire_sn(text: str) -> List[str] :
-    """Extrait les syntagmes nominaux du texte
+def split_sentences(text: str) -> List[str] :
+    """Sépare le texte en phrases
 
     Parameters
     ----------
     text : str
-        texte à chunker
+        texte qu'on veut séparer en phrases
 
     Returns
     -------
     List
-        liste des syntagmes nominaux du texte
-    """
-    doc = nlp(text)
-    sn = [chunk.text for chunk in doc.noun_chunks]
-    return sn
-
-
-def extraire_sv(text: str) -> List[str] :
-    """Extrait les syntagmes verbaux du texte
-
-    Parameters
-    ----------
-    text : str
-        texte à chunker
-
-    Returns
-    -------
-    List
-        liste des syntagmes verbaux du texte
+        liste des phrases du texte
     """
     
     doc = nlp(text)
-    sv = []
-    for token in doc:
-        if token.pos_ == 'VERB':  # Si le token est un verbe
-            verb_phrase = [token.text]
-            for child in token.children:  # Ajouter les dépendants du verbe
-                verb_phrase.append(child.text)
-            sv.append(' '.join(verb_phrase))
-    return sv
+    sentences = []
+    for sent in doc.sents:
+        sentences.append(sent.text)
+    return sentences
 
-
-def extraire_sp(text: str) -> List[str] :
-    """Extrait les syntagmes prépositionnels du texte
-
-    Parameters
-    ----------
-    text : str
-        texte à chunker
-
-    Returns
-    -------
-    List
-        liste des syntagmes prépositionnels du texte
-    """
-    
-    doc = nlp(text)
-    sp = []
-    for token in doc:
-        if token.dep_ == 'case':  # Si le token est une préposition
-            governor = token.head  # Récupérer le gouverneur du token prépositionnel
-            prep_phrase = f"{token.text} {governor.text}"
-            sp.append(prep_phrase)
-    return sp
 
 
 def mots_in_syntagme(liste_syntagmes: List[str]) -> List[str] : 
@@ -112,7 +38,7 @@ def mots_in_syntagme(liste_syntagmes: List[str]) -> List[str] :
     Parameters
     ----------
     liste_syntagmes : List[str]
-        liste des syntagmes extraites (ex : liste des syntagmes nominaux)
+        liste des syntagmes extraits (ex : liste des syntagmes nominaux)
 
     Returns
     -------
@@ -126,6 +52,7 @@ def mots_in_syntagme(liste_syntagmes: List[str]) -> List[str] :
         for mot in mots :
             mots_in_syntagmes.append(mot)
     return mots_in_syntagmes
+
 
 
 def analyse_dependances(text: str, sn: List[str], sv: List[str], sp: List[str]) -> List[Mot] :
@@ -149,7 +76,7 @@ def analyse_dependances(text: str, sn: List[str], sv: List[str], sp: List[str]) 
     """
     
     liste_tokens = []
-    doc = nlp(text)
+    doc = nlp(text.phrase)
 
     for index, token in enumerate(doc) :
 
@@ -186,52 +113,113 @@ def analyse_dependances(text: str, sn: List[str], sv: List[str], sp: List[str]) 
 
         syntagmes = synt
         liste_tokens.append(Mot(ID, forme, pos, lemme, deprel, gouv, syntagmes))
+    
     return liste_tokens
 
 
-def sauvegarde_csv(liste_mots: List[Mot], fichier: str) -> None : 
-    """Sauvegarde le résultat dans un fichier csv
+
+def analyse_syntaxique(phrases: List[Phrase]) -> List[Phrase] : 
+    """Analyse syntaxiquement chaque phrase du texte
 
     Parameters
     ----------
-    liste_mots : List
-        liste des mots avec leurs informations syntaxiques
+    phrases : List
+        liste des phrases analysées
+
+    Returns
+    -------
+    List
+        liste des phrases chunkées
+    """
+    
+    phrases_completes = []
+    
+    # Récupérer les mots des syntagmes pour chaque phrase
+    for sent in phrases : 
+        mots_in_sn = mots_in_syntagme(sent.sn)
+        mots_in_sv = mots_in_syntagme(sent.sv)
+        mots_in_sp = mots_in_syntagme(sent.sp)
+    
+        # Analyse syntaxique du texte
+        tokens = analyse_dependances(sent, mots_in_sn, mots_in_sv, mots_in_sp)
+        sent.mots = tokens
+        phrases_completes.append(sent)
+    
+    return phrases_completes
+
+
+
+def sauvegarde_csv(liste_phrases: List[Phrase], fichier: str) -> None : 
+    """Sauvegarde les phrases annotées dans un fichier csv
+
+    Parameters
+    ----------
+    liste_phrases : List
+        liste des phrases annotées
+    fichier : str
+        fichier dans lequel on veut sauvegarder les données
 
     Returns
     -------
     None
-    """
+    """    
     
     with open (fichier, "w") as f :
         writer = csv.writer(f)
-        writer.writerow(['ID', 'Mot', 'POS', 'Lemme', 'Rel', 'Gouv', 'Syntagmes'])
-        for mot in liste_mots : 
-            writer.writerow([mot.ID, mot.forme, mot.pos, mot.lemme, mot.deprel, mot.gouv, mot.syntagmes])
+        
+        writer.writerow(
+            ['ID mot', 
+             'Mot', 
+             'POS', 
+             'Lemme', 
+             'Deprel', 
+             'Gouverneur', 
+             'Syntagmes', 
+             'ID Phrase', 
+             'Phrase', 
+             'Syntagmes nominaux', 
+             'Syntagmes verbaux', 
+             'Syntagmes prépositionnels']
+            )
+        
+        for phrase in liste_phrases : 
+            for mot in phrase.mots : 
+                writer.writerow(
+                    [mot.ID, 
+                     mot.forme, 
+                     mot.pos, 
+                     mot.lemme, 
+                     mot.deprel, 
+                     mot.gouv, 
+                     mot.syntagmes, 
+                     phrase.ID, 
+                     phrase.phrase, 
+                     phrase.sn, 
+                     phrase.sv, 
+                     phrase.sp]
+                    )
+    
+    print(f"Les données ont bien été sauvegardées dans le fichier {fichier}.")
+
 
 
 def main() : 
     
     # Texte à chunker
-    texte = "La maman a un cadeau pour son enfant."
+    texte = "La maman a un cadeau pour son enfant. Je vais apporter cette tarte à la voisine pour qu'elle me remercie. Pour faire un gâteau il faut du beurre et de la farine."
     
-    # Extraction des syntagmes
-    liste_sn = extraire_sn(texte)
-    print(f"Syntagmes nominaux : {liste_sn}")
-    liste_sv = extraire_sv(texte)
-    print(f"Syntagmes verbaux : {liste_sv}")
-    liste_sp = extraire_sp(texte)
-    print(f"Syntagmes prépositionnels : {liste_sp}")
+    # Spliter le texte en phrases
+    phrases = split_sentences(texte)
     
-    # Récupération des mots des syntagmes
-    mots_in_sn = mots_in_syntagme(liste_sn)
-    mots_in_sv = mots_in_syntagme(liste_sv)
-    mots_in_sp = mots_in_syntagme(liste_sp)
+    # Chunker chaque phrase du texte
+    phrases_chunkees = extraire_syntagmes(phrases)
     
-    # Analyse syntaxique du texte
-    tokens = analyse_dependances(texte, mots_in_sn, mots_in_sv, mots_in_sp)
+    # Analyser syntaxiquement chaque phrase
+    phrases_annotees = analyse_syntaxique(phrases_chunkees)
     
-    # Sauvegarde de l'analyse syntaxique
-    sauvegarde_csv(tokens, "../data/resultat_chunk_spacy.csv")
+    # Sauvegarde de l'analyse syntaxique dans un csv
+    sauvegarde_csv(phrases_annotees, "../data/resultat_chunk_spacy.csv")
+
 
 
 if __name__ == "__main__":
