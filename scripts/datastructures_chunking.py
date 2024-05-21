@@ -117,7 +117,6 @@ def extraire_sn(sentence: str) -> List[str] :
                 if token.text in sn_spacy : 
                     sn_spacy.remove(token.text)
     
-    print(sn_spacy)
     return sn_spacy
 
 

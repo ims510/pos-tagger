@@ -47,7 +47,7 @@ def split_sentences(text: str) -> List[str] :
     
     doc = nlp(text)
     sentences = []
-    for sent in doc.sents:
+    for sent in tqdm(doc.sents, desc='Découpage du texte en phrases') :
         sentences.append(sent.text)
     return sentences
 
@@ -158,7 +158,7 @@ def analyse_syntaxique(phrases: List[Phrase]) -> List[Phrase] :
     phrases_completes = []
     
     # Récupérer les mots des syntagmes pour chaque phrase
-    for sent in tqdm(phrases, desc='Analyse syntaxique') : 
+    for sent in tqdm(phrases, desc='Analyse syntaxique du texte') : 
         mots_in_sn = mots_in_syntagme(sent.sn)
         mots_in_sv = mots_in_syntagme(sent.sv)
         mots_in_sp = mots_in_syntagme(sent.sp)
@@ -205,7 +205,7 @@ def sauvegarde_csv(liste_phrases: List[Phrase], fichier: str) -> None :
              'Syntagmes prépositionnels']
             )
         
-        for phrase in liste_phrases : 
+        for phrase in tqdm(liste_phrases, desc="Sauvegarde de l'analyse") : 
             for mot in phrase.mots : 
                 writer.writerow(
                     [mot.ID, 
