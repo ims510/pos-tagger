@@ -145,10 +145,14 @@ def extraire_sv(sentence: str) -> List[str] :
             for child in token.children : 
                     
                 # Si le dependant est relie au verbe par "xcomp", on ajoute ses dependants
+                # Sauf s'ils sont relies a ce dependant par "mark" ou "advcl"
                 if child.dep_ == "xcomp" : 
                     enfant = child
                     for enfant in enfant.children : 
-                        verb_phrase.append(enfant.text)
+                        if enfant.dep_ != 'mark' and enfant.dep_ != 'advcl' : 
+                        
+                        
+                            verb_phrase.append(enfant.text)
                 
                 # Si le dependant n'est pas relie au verbe par "mark" ou "advcl" on l'ajoute
                 if child.dep_ != 'mark' and child.dep_ != 'advcl' : 
