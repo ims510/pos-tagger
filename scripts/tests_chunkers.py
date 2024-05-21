@@ -434,3 +434,76 @@ for token in doc:
 
 print(sp)
 return sp"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def extraire_sp(sentence: str) -> List[str] :
+    """Extrait les syntagmes pr√©positionnels de la phrase
+
+    Parameters
+    ----------
+    sentence : str
+        phrase √† chunker
+
+    Returns
+    -------
+    List
+        liste des syntagmes pr√©positionnels de la phrase
+    """
+    
+    doc = nlp(sentence)
+    sp = []
+    
+    for token in doc : 
+        prep_phrase = [token.text]
+        
+        # Si le token est une preposition et qu'il n'a pas de relation 'det' (evite d'extraire les articles partitifs)
+        if token.pos_ == 'ADP' and token.dep_ != 'det' :
+            
+            # Recuperer le gouverneur du token prepositionnel et l'ajouter à l'extraction
+            governor = token.head
+            #prep_phrase.append(governor.text)
+            
+            # Si le gouverneur est un nom ou un nom propre, on regarde ses dependants
+            if governor.pos_ == 'NOUN' or governor.pos_ == 'PROPN' : 
+                for child in governor.children : 
+                    
+                    # Si le dependant du gouverneur est lie a lui par une relation 'det'
+                    # alors on l'extrait
+                    if child.dep_ == 'det' : 
+                        prep_phrase.append(child.text)
+            
+            prep_phrase.append(governor.text)
+            
+            # Si le gouverneur est un verbe, on regarde ses dependants
+            if governor.pos_ == 'VERB' : 
+                
+                # S'il possede un dependant qui est son objet alors on ajoute cet objet a l'extraction
+                for child in governor.children : 
+                    if child.dep_ == 'obj' : 
+                        prep_phrase.append(child.text)
+            
+            sp.append(' '.join(prep_phrase))
+
+
+    # Comparaison des SP avec les SN
+    sn = extraire_sn(sentence)
+    
+    # Pour chaque sp extrait, s'il appartient aux sn extraits alors on le supprime des sp
+    for synt in sp : 
+        if synt in sn : 
+            sp.remove(synt)
+
+    return sp

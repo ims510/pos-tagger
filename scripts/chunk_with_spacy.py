@@ -129,9 +129,6 @@ def analyse_dependances(text: str, sn: List[str], sv: List[str], sp: List[str]) 
         if gouv.text in sv and deprel != 'mark' : # si le gouverneur du token est dans un groupe verbal ET que le token n’est pas relié au gouverneur par une relation “mark”
             if 'SV' not in synt :
                 synt.append('SV')
-        """if gouv.text in sp :
-            if 'SP' not in synt :
-                synt.append('SP')"""
 
         # Pour éviter d'aller trop loin dans l'imbrications des syntagmes, on ne garde que le(s) syntagme(s) auquel appartient le mot directement et éventuellement celui de son gouverneur
         while len(synt) > 2 :

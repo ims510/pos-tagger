@@ -116,7 +116,8 @@ def extraire_sn(sentence: str) -> List[str] :
             if token.text in noms_sans_det : 
                 if token.text in sn_spacy : 
                     sn_spacy.remove(token.text)
-
+    
+    print(sn_spacy)
     return sn_spacy
 
 
@@ -127,7 +128,7 @@ def extraire_sv(sentence: str) -> List[str] :
     Parameters
     ----------
     sentence : str
-        phrase √† chunker
+        phrase a chunker
 
     Returns
     -------
@@ -137,31 +138,35 @@ def extraire_sv(sentence: str) -> List[str] :
     
     doc = nlp(sentence)
     sv = []
+    
     for token in doc :
         if token.pos_ == 'VERB' and token.dep_ != 'xcomp' :  # Si le token est un verbe pas complement
-            verb_phrase = [token.text]   # On ajoute le verbe a la liste
+            verb_phrase = [(token, token.i)]   # On ajoute le verbe à la liste avec sa position
             
-            # On parcourt les dependants du verbe
-            for child in token.children : 
-                    
+            # On parcourt les dépendants du verbe
+            for child in token.children :
+                
                 # Si le dependant est relie au verbe par "xcomp", on ajoute ses dependants
                 # Sauf s'ils sont relies a ce dependant par "mark" ou "advcl"
-                if child.dep_ == "xcomp" : 
+                if child.dep_ == "xcomp" :
                     enfant = child
-                    for enfant in enfant.children : 
-                        if enfant.dep_ != 'mark' and enfant.dep_ != 'advcl' : 
-                        
-                        
-                            verb_phrase.append(enfant.text)
+                    for enfant in enfant.children :
+                        if enfant.dep_ != 'mark' and enfant.dep_ != 'advcl' :
+                            verb_phrase.append((enfant, enfant.i))
                 
                 # Si le dependant n'est pas relie au verbe par "mark" ou "advcl" on l'ajoute
-                if child.dep_ != 'mark' and child.dep_ != 'advcl' : 
-                    verb_phrase.append(child.text)
-                
-            sv.append(' '.join(verb_phrase))
-    
-    return sv
+                if child.dep_ != 'mark' and child.dep_ != 'advcl' :
+                    verb_phrase.append((child, child.i))
+            
+            # On trie les tokens par leur position
+            verb_phrase = sorted(verb_phrase, key=lambda x: x[1])
+            
+            # On extrair le texte des tokens tries et on cree le syntagme verbal
+            verb_phrase_text = ' '.join([tok[0].text for tok in verb_phrase])
+            sv.append(verb_phrase_text)
 
+    return sv
+    
 
 
 def extraire_sp(sentence: str) -> List[str] :
@@ -170,57 +175,58 @@ def extraire_sp(sentence: str) -> List[str] :
     Parameters
     ----------
     sentence : str
-        phrase √† chunker
+        phrase a chunker
 
     Returns
     -------
     List
-        liste des syntagmes pr√©positionnels de la phrase
+        liste des syntagmes prepositionnels de la phrase
     """
     
     doc = nlp(sentence)
     sp = []
     
-    for token in doc : 
-        prep_phrase = [token.text]
+    for token in doc :
         
         # Si le token est une preposition et qu'il n'a pas de relation 'det' (evite d'extraire les articles partitifs)
         if token.pos_ == 'ADP' and token.dep_ != 'det' :
+            prep_phrase = [(token, token.i)]
             
             # Recuperer le gouverneur du token prepositionnel et l'ajouter à l'extraction
             governor = token.head
-            #prep_phrase.append(governor.text)
             
             # Si le gouverneur est un nom ou un nom propre, on regarde ses dependants
-            if governor.pos_ == 'NOUN' or governor.pos_ == 'PROPN' : 
-                for child in governor.children : 
+            if governor.pos_ == 'NOUN' or governor.pos_ == 'PROPN' :
+                for child in governor.children :
                     
                     # Si le dependant du gouverneur est lie a lui par une relation 'det'
                     # alors on l'extrait
-                    if child.dep_ == 'det' : 
-                        prep_phrase.append(child.text)
+                    if child.dep_ == 'det' :
+                        prep_phrase.append((child, child.i))
             
-            prep_phrase.append(governor.text)
+            prep_phrase.append((governor, governor.i))
             
             # Si le gouverneur est un verbe, on regarde ses dependants
-            if governor.pos_ == 'VERB' : 
+            if governor.pos_ == 'VERB' :
                 
                 # S'il possede un dependant qui est son objet alors on ajoute cet objet a l'extraction
-                for child in governor.children : 
-                    if child.dep_ == 'obj' : 
-                        prep_phrase.append(child.text)
+                for child in governor.children:
+                    if child.dep_ == 'obj' :
+                        prep_phrase.append((child, child.i))
             
-            sp.append(' '.join(prep_phrase))
-
+            # On trie les tokens par leur position
+            prep_phrase = sorted(prep_phrase, key=lambda x: x[1])
+            
+            # On extrait le texte des tokens tries et on cree le syntagme prepositionnel
+            prep_phrase_text = ' '.join([tok[0].text for tok in prep_phrase])
+            sp.append(prep_phrase_text)
 
     # Comparaison des SP avec les SN
     sn = extraire_sn(sentence)
     
     # Pour chaque sp extrait, s'il appartient aux sn extraits alors on le supprime des sp
-    for synt in sp : 
-        if synt in sn : 
-            sp.remove(synt)
-
+    sp = [synt for synt in sp if synt not in sn]
+            
     return sp
 
 
