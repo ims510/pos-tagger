@@ -2,7 +2,7 @@
 
 
 
-from datastructures_chunking import Mot, Phrase, extraire_syntagmes
+from datastructures_chunking import Mot, Phrase, extraire_chunks
 from typing import List
 import csv
 from tqdm import tqdm
@@ -12,7 +12,7 @@ nlp = spacy.load('fr_core_news_sm')
 
 
 
-def open_txt(fichier: str) -> str : 
+def open_txt(fichier: str) -> str :
     """Ouvre le fichier txt contenant le texte à chunker
 
     Parameters
@@ -25,7 +25,7 @@ def open_txt(fichier: str) -> str :
     str
         texte à chunker
     """
-    with open(fichier, 'r') as f : 
+    with open(fichier, 'r') as f :
         content = f.read().strip()
     return content
 
@@ -44,7 +44,7 @@ def split_sentences(text: str) -> List[str] :
     List
         liste des phrases du texte
     """
-    
+
     doc = nlp(text)
     sentences = []
     for sent in tqdm(doc.sents, desc='Découpage du texte en phrases') :
@@ -53,26 +53,26 @@ def split_sentences(text: str) -> List[str] :
 
 
 
-def mots_in_syntagme(liste_syntagmes: List[str]) -> List[str] : 
-    """Retourne la liste de tous les mots appartenant à la liste de syntagmes
+def mots_in_chunk(liste_chunks: List[str]) -> List[str] :
+    """Retourne la liste de tous les mots appartenant à la liste de chunks
 
     Parameters
     ----------
-    liste_syntagmes : List[str]
-        liste des syntagmes extraits (ex : liste des syntagmes nominaux)
+    liste_chunks : List[str]
+        liste des chunks extraits (ex : liste des chunks nominaux)
 
     Returns
     -------
     List
-        liste des mots appartenant à ces syntagmes
+        liste des mots appartenant à ces chunks
     """
-    
-    mots_in_syntagmes = []
-    for syntagme in liste_syntagmes : 
-        mots = syntagme.split()
+
+    mots_in_chunks = []
+    for chunk in liste_chunks :
+        mots = chunk.split()
         for mot in mots :
-            mots_in_syntagmes.append(mot)
-    return mots_in_syntagmes
+            mots_in_chunks.append(mot)
+    return mots_in_chunks
 
 
 
@@ -84,18 +84,18 @@ def analyse_dependances(text: str, sn: List[str], sv: List[str], sp: List[str]) 
     text : str
         texte qu'on veut analyser
     sn : List[str]
-        liste des mots appartenant aux syntagmes nominaux
+        liste des mots appartenant aux chunks nominaux
     sv : List[str]
-        liste des mots appartenant aux syntagmes verbaux
+        liste des mots appartenant aux chunks verbaux
     sp : List[str]
-        liste des mots appartenant aux syntagmes prépositionnels
+        liste des mots appartenant aux chunks prépositionnels
 
     Returns
     -------
     List
         liste des mots avec leurs informations syntaxiques
     """
-    
+
     liste_tokens = []
     doc = nlp(text.phrase)
 
@@ -108,7 +108,7 @@ def analyse_dependances(text: str, sn: List[str], sv: List[str], sp: List[str]) 
         deprel = token.dep_
         gouv = token.head
 
-        # Trouver son syntagme direct (syntagme auquel il appartient)
+        # Trouver son chunk direct (chunk auquel il appartient)
         synt = []
         if forme in sn :
             synt.append('SN')
@@ -117,31 +117,31 @@ def analyse_dependances(text: str, sn: List[str], sv: List[str], sp: List[str]) 
         if forme in sp :
             synt.append('SP')
 
-        # Trouver l'éventuel syntagme dans lequel se trouve le syntagme auquel il appartient
+        # Trouver l'éventuel chunk dans lequel se trouve le chunk auquel il appartient
         if gouv.text in sn :
             if 'SN' not in synt :
                 synt.append('SN')
-                
+
         if gouv.text in sp :
             if 'SP' not in synt :
                 synt.append('SP')
-        
+
         if gouv.text in sv and deprel != 'mark' : # si le gouverneur du token est dans un groupe verbal ET que le token n’est pas relié au gouverneur par une relation “mark”
             if 'SV' not in synt :
                 synt.append('SV')
 
-        # Pour éviter d'aller trop loin dans l'imbrications des syntagmes, on ne garde que le(s) syntagme(s) auquel appartient le mot directement et éventuellement celui de son gouverneur
+        # Pour éviter d'aller trop loin dans l'imbrications des chunks, on ne garde que le(s) chunk(s) auquel appartient le mot directement et éventuellement celui de son gouverneur
         while len(synt) > 2 :
             del synt[-1]
 
-        syntagmes = synt
-        liste_tokens.append(Mot(ID, forme, pos, lemme, deprel, gouv, syntagmes))
-    
+        chunks = synt
+        liste_tokens.append(Mot(ID, forme, pos, lemme, deprel, gouv, chunks))
+
     return liste_tokens
 
 
 
-def analyse_syntaxique(phrases: List[Phrase]) -> List[Phrase] : 
+def analyse_syntaxique(phrases: List[Phrase]) -> List[Phrase] :
     """Analyse syntaxiquement chaque phrase du texte
 
     Parameters
@@ -154,25 +154,25 @@ def analyse_syntaxique(phrases: List[Phrase]) -> List[Phrase] :
     List
         liste des phrases chunkées
     """
-    
+
     phrases_completes = []
-    
-    # Récupérer les mots des syntagmes pour chaque phrase
-    for sent in tqdm(phrases, desc='Analyse syntaxique du texte') : 
-        mots_in_sn = mots_in_syntagme(sent.sn)
-        mots_in_sv = mots_in_syntagme(sent.sv)
-        mots_in_sp = mots_in_syntagme(sent.sp)
-    
+
+    # Récupérer les mots des chunks pour chaque phrase
+    for sent in tqdm(phrases, desc='Analyse syntaxique du texte') :
+        mots_in_sn = mots_in_chunk(sent.sn)
+        mots_in_sv = mots_in_chunk(sent.sv)
+        mots_in_sp = mots_in_chunk(sent.sp)
+
         # Analyse syntaxique du texte
         tokens = analyse_dependances(sent, mots_in_sn, mots_in_sv, mots_in_sp)
         sent.mots = tokens
         phrases_completes.append(sent)
-    
+
     return phrases_completes
 
 
 
-def sauvegarde_csv(liste_phrases: List[Phrase], fichier: str) -> None : 
+def sauvegarde_csv(liste_phrases: List[Phrase], fichier: str) -> None :
     """Sauvegarde les phrases annotées dans un fichier csv
 
     Parameters
@@ -185,48 +185,48 @@ def sauvegarde_csv(liste_phrases: List[Phrase], fichier: str) -> None :
     Returns
     -------
     None
-    """    
-    
+    """
+
     with open (fichier, "w") as f :
         writer = csv.writer(f)
-        
+
         writer.writerow(
-            ['ID mot', 
-             'Mot', 
-             'POS', 
-             'Lemme', 
-             'Deprel', 
-             'Gouverneur', 
-             'Syntagmes', 
-             'ID Phrase', 
-             'Phrase', 
-             'Syntagmes nominaux', 
-             'Syntagmes verbaux', 
-             'Syntagmes prépositionnels']
+            ['ID mot',
+             'Mot',
+             'POS',
+             'Lemme',
+             'Deprel',
+             'Gouverneur',
+             'chunks',
+             'ID Phrase',
+             'Phrase',
+             'chunks nominaux',
+             'chunks verbaux',
+             'chunks prépositionnels']
             )
-        
-        for phrase in tqdm(liste_phrases, desc="Sauvegarde de l'analyse") : 
-            for mot in phrase.mots : 
+
+        for phrase in tqdm(liste_phrases, desc="Sauvegarde de l'analyse") :
+            for mot in phrase.mots :
                 writer.writerow(
-                    [mot.ID, 
-                     mot.forme, 
-                     mot.pos, 
-                     mot.lemme, 
-                     mot.deprel, 
-                     mot.gouv, 
-                     mot.syntagmes, 
-                     phrase.ID, 
-                     phrase.phrase, 
-                     phrase.sn, 
-                     phrase.sv, 
+                    [mot.ID,
+                     mot.forme,
+                     mot.pos,
+                     mot.lemme,
+                     mot.deprel,
+                     mot.gouv,
+                     mot.chunks,
+                     phrase.ID,
+                     phrase.phrase,
+                     phrase.sn,
+                     phrase.sv,
                      phrase.sp]
                     )
-    
+
     print(f"Les données ont bien été sauvegardées dans le fichier {fichier}.")
 
 
 
-def main() : 
+def main() :
 
     # Gérer les arguments
     parser = argparse.ArgumentParser(description="Chunking d'un texte")
@@ -236,16 +236,17 @@ def main() :
 
     # Ouvrir le fichier a chunker
     texte = open_txt(args.input_file)
-    
+
     # Spliter le texte en phrases
     phrases = split_sentences(texte)
-    
+
     # Chunker chaque phrase du texte
-    phrases_chunkees = extraire_syntagmes(phrases)
-    
+    liste_chunks = extraire_chunks(phrases)
+    print(liste_chunks)
+
     # Analyser syntaxiquement chaque phrase
-    phrases_annotees = analyse_syntaxique(phrases_chunkees)
-    
+    phrases_annotees = analyse_syntaxique(liste_chunks)
+
     # Sauvegarde de l'analyse syntaxique dans un csv
     sauvegarde_csv(phrases_annotees, args.output_file)
 
