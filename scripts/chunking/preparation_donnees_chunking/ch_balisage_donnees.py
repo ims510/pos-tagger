@@ -11,16 +11,17 @@ Created on Tue May 28 09:42:42 2024
 
 
 
-from identify_errors import ouverture_csv
-from datastructure import Ligne, Production, Diff, AnLine
+from ch_identify_errors import ouverture_csv
+from ch_datastructure import Ligne, Production, Diff, AnLine
 from typing import List, Dict
 from tqdm import tqdm
 import csv
-from pos_tagger import get_persons, add_burst_to_text
+from ch_pos_tagger import get_persons, add_burst_to_text
+import re
 
 
 
-def ouvrir_csv(file) -> List[AnLine] : 
+def ouvrir_csv(file) -> List[AnLine] :
     with open (file, 'r', encoding='utf-8') as f:
 
         if file.endswith('.csv') :
@@ -132,32 +133,29 @@ def combiner_lignes(liste: List[AnLine]) -> List[AnLine]:
 
     # Parcourir la liste pour regrouper les lignes ayant les mêmes clés ID et n_burst
     for ligne in liste:
-        cle = (ligne.ID, 
-               ligne.n_burst, 
-               ligne.charge, 
-               ligne.outil, 
-               ligne.debut_burst, 
-               ligne.duree_burst, 
-               ligne.duree_pause, 
-               ligne.duree_cycle, 
-               ligne.pct_burst, 
-               ligne.pct_pause, 
-               ligne.longueur_burst, 
-               ligne.burst, 
-               ligne.startPos, 
-               ligne.endPos, 
-               ligne.docLength, 
-               ligne.categ, 
-               ligne.charBurst, 
-               ligne.ratio, 
-               ligne.erreur, 
+        cle = (ligne.ID,
+               ligne.n_burst,
+               ligne.charge,
+               ligne.outil,
+               ligne.debut_burst,
+               ligne.duree_burst,
+               ligne.duree_pause,
+               ligne.duree_cycle,
+               ligne.pct_burst,
+               ligne.pct_pause,
+               ligne.longueur_burst,
+               ligne.burst,
+               ligne.startPos,
+               ligne.endPos,
+               ligne.docLength,
+               ligne.categ,
+               ligne.charBurst,
+               ligne.ratio,
+               ligne.erreur,
                ligne.cat_error)
-        
+
         if cle in lignes_regroupees:
             # Si la clé existe, ajouter les valeurs texte et lemme à la ligne correspondante
-            
-            #lignes_regroupees[cle]['erreur'].append(ligne.erreur)
-            #lignes_regroupees[cle]['cat_error'].append(ligne.cat_error)
             lignes_regroupees[cle]['token_erronne'].append(ligne.token_erronne)
             lignes_regroupees[cle]['lemme'].append(ligne.lemme)
             lignes_regroupees[cle]['pos_suppose'].append(ligne.pos_suppose)
@@ -167,67 +165,60 @@ def combiner_lignes(liste: List[AnLine]) -> List[AnLine]:
             lignes_regroupees[cle]['correction'].append(ligne.correction)
 
         else:
-            # Si la clé n'existe pas, créer une nouvelle entrée dans le dictionnaire            
+            # Si la clé n'existe pas, créer une nouvelle entrée dans le dictionnaire
             lignes_regroupees[cle] = {
-                                        #'erreur': [ligne.erreur], 
-                                        #'cat_error': [ligne.cat_error], 
-                                      'token_erronne': [ligne.token_erronne], 
-                                      'lemme': [ligne.lemme], 
+                                      'token_erronne': [ligne.token_erronne],
+                                      'lemme': [ligne.lemme],
                                       'pos_suppose': [ligne.pos_suppose],
                                       'pos_reel': [ligne.pos_reel],
                                       'longueur': [ligne.longueur],
                                       'contexte': [ligne.contexte],
                                       'correction': [ligne.correction]}
 
-    
+
     # Créer une nouvelle liste de AnLine en combinant les valeurs texte et lemme pour chaque groupe
     lignes_combinees = []
     for cle, valeurs in lignes_regroupees.items():
-        
-        #erreur_combine = '|'.join(valeurs['erreur'])
-        #cat_error_combine = '|'.join(valeurs['cat_error'])
+
         token_erronne_combine = '|'.join(valeurs['token_erronne'])
         lemme_combine = '|'.join(valeurs['lemme'])
         pos_suppose_combine = '|'.join(valeurs['pos_suppose'])
         pos_reel_combine = '|'.join(valeurs['pos_reel'])
         longueur_combine = '|'.join(valeurs['longueur'])
         contexte_combine = '|'.join(valeurs['contexte'])
-        correction_combine = '|'.join(valeurs['correction'])        
-        
-        
+        correction_combine = '|'.join(valeurs['correction'])
+
+
         lignes_combinees.append(AnLine(
-            ID=cle[0], 
-            n_burst=cle[1], 
-            charge=cle[2], 
-            outil=cle[3], 
-            debut_burst=cle[4], 
-            duree_burst=cle[5], 
-            duree_pause=cle[6], 
-            duree_cycle=cle[7], 
-            pct_burst=cle[8], 
-            pct_pause=cle[9], 
-            longueur_burst=cle[10], 
-            burst=cle[11], 
-            startPos=cle[12], 
-            endPos=cle[13], 
-            docLength=cle[14], 
-            categ=cle[15], 
-            charBurst=cle[16], 
-            ratio=cle[17], 
-            erreur=cle[18], 
-            cat_error=cle[19], 
-            
-            #erreur=erreur_combine, 
-            #cat_error=cat_error_combine,
-            token_erronne=token_erronne_combine, 
-            lemme=lemme_combine, 
-            pos_suppose=pos_suppose_combine, 
-            pos_reel=pos_reel_combine, 
-            longueur=longueur_combine, 
-            contexte=contexte_combine, 
+            ID=cle[0],
+            n_burst=cle[1],
+            charge=cle[2],
+            outil=cle[3],
+            debut_burst=cle[4],
+            duree_burst=cle[5],
+            duree_pause=cle[6],
+            duree_cycle=cle[7],
+            pct_burst=cle[8],
+            pct_pause=cle[9],
+            longueur_burst=cle[10],
+            burst=cle[11],
+            startPos=cle[12],
+            endPos=cle[13],
+            docLength=cle[14],
+            categ=cle[15],
+            charBurst=cle[16],
+            ratio=cle[17],
+            erreur=cle[18],
+            cat_error=cle[19],
+
+            token_erronne=token_erronne_combine,
+            lemme=lemme_combine,
+            pos_suppose=pos_suppose_combine,
+            pos_reel=pos_reel_combine,
+            longueur=longueur_combine,
+            contexte=contexte_combine,
             correction=correction_combine
             ))
-    
 
     return lignes_combinees
 
@@ -276,17 +267,17 @@ def enrichir_productions(liste1: List[AnLine], liste2: List[AnLine]) -> List[AnL
                 correction=ligne2.correction
             )
             lignes_combinees.append(ligne_mise_a_jour)
-    
+
     # Ajouter les lignes de liste1 qui n'ont pas de correspondance dans liste2
     for ligne1 in liste1:
         cle = (ligne1.ID, ligne1.n_burst)
         if cle not in dict_liste2:
             lignes_combinees.append(ligne1)
-    
+
     # Trier les lignes selon leur burst
     liste_triee = sorted(lignes_combinees, key=lambda x: (x.ID, x.n_burst))
 
-    return lignes_combinees
+    return liste_triee
 
 
 
@@ -332,15 +323,15 @@ def recuperer_productions(list_lines: List[AnLine], personnes: Dict[str, List[An
                 charBurst=list_lines[i].charBurst,
                 ratio=list_lines[i].ratio,
 
-                erreur=list_lines[i].erreur, 
-                cat_error=list_lines[i].cat_error, 
-                token_erronne=list_lines[i].token_erronne, 
-                lemme=list_lines[i].lemme, 
-                pos_suppose=list_lines[i].pos_suppose, 
-                pos_reel=list_lines[i].pos_reel, 
-                longueur=list_lines[i].longueur, 
-                contexte=list_lines[i].contexte, 
-                correction=list_lines[i].correction, 
+                erreur=list_lines[i].erreur,
+                cat_error=list_lines[i].cat_error,
+                token_erronne=list_lines[i].token_erronne,
+                lemme=list_lines[i].lemme,
+                pos_suppose=list_lines[i].pos_suppose,
+                pos_reel=list_lines[i].pos_reel,
+                longueur=list_lines[i].longueur,
+                contexte=list_lines[i].contexte,
+                correction=list_lines[i].correction,
 
                 rt=running_text,
                 rt_balise=running_text)
@@ -407,7 +398,7 @@ def difference_between(chaine_1, chaine_2) :
             # Trouver l'indice du dernier caractÃ¨re diffÃ©rent
             for index, (char1, char2) in enumerate(zip(reversed(chaine_1), reversed(chaine_2))) :
                 if char1 != char2 :
-                    end_diff_index = len(chaine_1)+1 - index
+                    end_diff_index = len(chaine_1) - index
                     break
                 else :
                     end_diff_index = len(chaine_2)
@@ -432,7 +423,7 @@ def difference_between(chaine_1, chaine_2) :
         # Trouver l'indice du dernier caractÃ¨re diffÃ©rent
         for index, (char1, char2) in enumerate(zip(reversed(chaine_1), reversed(chaine_2))) :
             if char1 != char2 :
-                end_diff_index = len(chaine_1)+1 - index
+                end_diff_index = len(chaine_1) - index
                 break
             else :
                 end_diff_index = None
@@ -446,94 +437,190 @@ def difference_between(chaine_1, chaine_2) :
 
 
 
-def trier_nburst(dico_personnes) : 
-    
+def trier_nburst(dico_personnes) :
+
     for personne in dico_personnes:
         dico_personnes[personne].sort(key=lambda x: x.n_burst)
     return dico_personnes
 
 
 
-def baliser_suppressions_internes(dico_prod) : 
-    
-    for personne, productions in dico_prod.items() : 
-        
-        # Pour chaque production de chaque personne : 
-        for prod in productions : 
-            
-            # Si la production contient une erreur du type "Suppression de caractères à l'intérieur d'un mot" : 
-            if prod.cat_error == "Suppression de caractères à l'intérieur d'un mot" : 
-                
-                # S'il y a une seule suppression interne : 
-                if len(prod.token_erronne.split('|')) == 1 : 
-                    
+def baliser_suppressions_internes(dico_prod) :
+
+    for personne, prod in dico_prod.items() :
+
+        # Pour chaque production de chaque personne :
+        for i in range(1, len(prod)) :
+
+            # 1. Si la production contient une erreur du type "Suppression de caractères à l'intérieur d'un mot" :
+            if prod[i].cat_error == "Suppression de caractères à l'intérieur d'un mot" :
+
+                # S'il y a une seule suppression interne :
+                if len(prod[i].token_erronne.split('|')) == 1 :
+
                     # On balise le charburst
-                    charburst_balise = prod.charBurst.replace(prod.token_erronne, f"<SI>{prod.correction}</SI>")
-                    prod.charBurst = charburst_balise.replace("␣", " ")
-                    
+                    charburst_balise = prod[i].charBurst.replace(prod[i].token_erronne, f"<SI>{prod[i].correction}</SI>")
+                    prod[i].charBurst = charburst_balise.replace("␣", " ")
+
                     # Intégrer les balises au running text balisé
-                    burst_sans_balises = prod.charBurst.replace("<SI>", "")
+                    burst_sans_balises = prod[i].charBurst.replace("<SI>", "")
                     burst_sans_balises = burst_sans_balises.replace("</SI>", "")
-                    prod.rt_balise = prod.rt_balise.replace(burst_sans_balises, prod.charBurst)
-                    
-                                    
-                # S'il y a plusieurs suppressions internes : 
-                if len(prod.token_erronne.split('|')) > 1 : 
-                    
+                    prod[i].rt_balise = prod[i].rt_balise.replace(burst_sans_balises, prod[i].charBurst)
+
+
+                # S'il y a plusieurs suppressions internes :
+                if len(prod[i].token_erronne.split('|')) > 1 :
+
                     # On recrée les couples (token_errone, correction)
-                    err = prod.token_erronne.split('|')
-                    corr = prod.correction.split('|')
+                    err = prod[i].token_erronne.split('|')
+                    corr = prod[i].correction.split('|')
                     couples = list(zip(err, corr))
 
                     # On initialise le charburst qu'on va baliser
-                    charburst_balise = prod.charBurst
-                    
-                    # Pour chaque couple, on balise le charburst balisé
-                    for couple in couples : 
-                        charburst_balise = charburst_balise.replace(couple[0], f"<SI>{couple[1]}</SI>")
-                    prod.charBurst = charburst_balise.replace("␣", " ")
-                    
-                    # Intégrer les balises au running text balisé
-                    burst_sans_balises = prod.charBurst.replace("<SI>", "")
-                    burst_sans_balises = burst_sans_balises.replace("</SI>", "")
-                    prod.rt_balise = prod.rt_balise.replace(burst_sans_balises, prod.charBurst)
-            
-            
-            # Si la production ne contient pas d'erreur de suppressions internes : 
-            else : 
-                
-                # le charBurst reste tel quel
-                prod.charBurst == prod.charBurst
-                
-    
-    
-    # Conserver toutes les annotations marquées par les balises à chaque production...   
-    
-    # Pour chaque production de chaque personne : 
-        
-        # Si le charburst contient des balises <SI> : 
-            
-            # On remplace le le burst par le charBurst dans le running text balisé
-            
-            # Le running text balisé de la production i+1 est égal au running text balisé de la production i + le 
-    
-    '''for pers, prod in dico_prod.items() : 
-        #print("------------")
-        #print(prod.rt_balise)
-        
-        for i in range(1, len(prod)) : 
-            
-            #print(prod[i].rt_balise)
-            
-            test = prod[i].rt_balise.replace(burst_sans_balises, prod[i-1].)'''
-        
-    
-    for prod in dico_prod["P+S1"] : 
-        print(f"{prod.ID}\t{prod.n_burst}\t{prod.rt_balise}")
-        
-    return dico_prod
-                
+                    charburst_balise = prod[i].charBurst
 
+                    # Pour chaque couple, on balise le charburst balisé
+                    for couple in couples :
+                        charburst_balise = charburst_balise.replace(couple[0], f"<SI>{couple[1]}</SI>")
+                    prod[i].charBurst = charburst_balise.replace("␣", " ")
+
+                    # Intégrer les balises au running text balisé
+                    burst_sans_balises = prod[i].charBurst.replace("<SI>", "")
+                    burst_sans_balises = burst_sans_balises.replace("</SI>", "")
+                    prod[i].rt_balise = prod[i].rt_balise.replace(burst_sans_balises, prod[i].charBurst)
+
+                print(f"{prod[i].charBurst}")
+
+
+            # 2. Si la production contient une erreur du type "Lettre unique ajoutée" :
+            if prod[i].cat_error == "Lettre unique ajoutée" :
+
+                modif = difference_between(prod[i-1].rt, prod[i].rt)
+
+                # Si len(prod[i-1].rt) < len(prod[i].rt)  --> cas basique où une lettre est ajoutée (ex : remède -> remèdes) :
+                if len(prod[i-1].rt) < len(prod[i].rt) :
+
+                    # on balise le token erronné aux positions de la modif dans la production i
+                    if modif.start != None and modif.end != None :
+                        ch_avant_balises = prod[i].rt[0:modif.start]
+                        ch_balisee = f"<LA>{prod[i].token_erronne}</LA>"
+                        ch_apres_balises = prod[i].rt[modif.end-1:len(prod[i].rt)]
+                        prod[i].rt_balise = ch_avant_balises + ch_balisee + ch_apres_balises
+
+                # Sinon  --> cas où la lettre ajoutée remplace une autre lettre ou chaîne (ex : madecine -> médecine ; nous -> non) :
+                else :
+
+                    # on balise le token erronné aux positions de la modif dans la production i
+                    if modif.start != None and modif.end != None :
+                        ch_avant_balises = prod[i].rt[0:modif.start]
+                        ch_balisee = f"<LR>{prod[i].token_erronne}</LR>"
+                        ch_apres_balises = prod[i].rt[modif.end:len(prod[i].rt)]
+                        prod[i].rt_balise = ch_avant_balises + ch_balisee + ch_apres_balises
+
+
+            # 3. Si la production contient une erreur du type "Espace ajouté" :
+            if prod[i].cat_error == "Espace ajouté" :
+
+                modif = difference_between(prod[i-1].rt, prod[i].rt)
+
+                # Si len(prod[i-1].rt) < len(prod[i].rt)  --> cas basique où un espace est ajouté (ex : eneffet -> en effet) :
+                if len(prod[i-1].rt) < len(prod[i].rt) :
+
+                    # on balise le token erronné aux positions de la modif dans la production i
+                    if modif.start != None and modif.end != None :
+                        ch_avant_balises = prod[i].rt[0:modif.start]
+                        ch_balisee = f"<EA>{prod[i].token_erronne}</EA>"
+                        ch_apres_balises = prod[i].rt[modif.end-1:len(prod[i].rt)]
+                        prod[i].rt_balise = ch_avant_balises + ch_balisee + ch_apres_balises
+
+
+                # Sinon  --> cas où l'espace ajouté remplace une lettre ou une chaîne (ex : enxeffet -> en effet ; enneeffet -> en effet) :
+                else :
+
+                    # on balise le token erronné aux positions de la modif dans la production i
+                    if modif.start != None and modif.end != None :
+                        ch_avant_balises = prod[i].rt[0:modif.start]
+                        ch_balisee = f"<ER>{prod[i].token_erronne}</ER>"
+                        ch_apres_balises = prod[i].rt[modif.end:len(prod[i].rt)]
+                        prod[i].rt_balise = ch_avant_balises + ch_balisee + ch_apres_balises
+
+
+
+
+
+            # 4. Si la production contient une erreur du type "Mot inséré entre deux mots" :
+            if prod[i].cat_error == "Mot inséré entre deux mots" :
+
+                modif = difference_between(prod[i-1].rt, prod[i].rt)
+
+                if modif.start != None and modif.end != None :
+
+                    # Si la différence et le token erroné sont identiques :
+                    if modif.difference.strip() == prod[i].token_erronne.strip() :
+
+                        # on balise le token erroné
+                        ch_avant_balises = prod[i].rt[0:modif.start]
+                        ch_balisee = f"<MI>{prod[i].token_erronne}</MI>"
+                        ch_apres_balises = prod[i].rt[modif.end-1:len(prod[i].rt)]
+                        prod[i].rt_balise = ch_avant_balises + ch_balisee + ch_apres_balises
+
+                    # Sinon :
+                    else :
+
+                        # on trouve le nombre de caractères différents à gauche
+
+
+                        # on trouve le nombre de caractères différents à droite
+
+
+
+                        ch_avant_balises = prod[i].rt[0:modif.start]
+                        ch_balisee = f"<MI>{prod[i].token_erronne}</MI>"
+                        ch_apres_balises = prod[i].rt[modif.end-1:len(prod[i].rt)]
+                        texte_balise = ch_avant_balises + ch_balisee + ch_apres_balises
+
+
+                        #for mot in range(1, len(texte_balise.split())) :
+
+                            #print(texte_balise[mot])
+
+                            #if texte_balise[mot].endswith("<MI>") :
+                                #print(texte_balise[mot])
+
+
+
+                        '''print("----------------")
+                        print(prod[i-1].n_burst)
+                        print(prod[i-1].rt)
+                        print()
+                        print(prod[i].n_burst)
+                        print(prod[i].rt)
+                        print("***")
+                        print(prod[i].token_erronne)
+                        print(modif.difference)
+                        print(texte_balise)
+                        #print(prod[i].rt_balise)
+
+                        print("----------------")'''
+
+
+
+            if prod[i].cat_error == "Partie d'une chaîne insérée entre deux mots" :
+                toto = "toto"
+
+            if prod[i].cat_error == "Backspaces supprimant une chaîne" :
+                toto = "toto"
+
+            if prod[i].cat_error == "Deletes supprimant une chaîne" :
+                toto = "toto"
+
+            if prod[i].cat_error == "0" :
+                toto = "toto"
+
+            else :
+                toto = "fini"
+
+    return dico_prod
 
 
 
@@ -575,7 +662,7 @@ SI = baliser_suppressions_internes(productions_par_personne)
 
 
 
-'''for prod in productions_par_personne["P+S1"] : 
+'''for prod in productions_par_personne["P+S1"] :
     print(prod.ID)
     print(prod.n_burst)
     print(prod.erreur)
@@ -593,15 +680,15 @@ SI = baliser_suppressions_internes(productions_par_personne)
 
         # Trouver la différence entre la production et celle d'avant
         modif = difference_between(productions[i].rt, productions[i-1].rt)
-        
-        
+
+
         # S'il n'y a pas de modification, le texte_balise correspond au running text
         if modif.start == None or modif.end == None or modif.difference == None :
             productions[i].rt_balise = productions[i].rt
-            
+
         # S'il y a une modification :
         else :
-            
+
             # Si la production est plus courte que la précédente : cas d'une suppression
             if len(productions[i].rt) < len(productions[i-1].rt) :
 
@@ -610,7 +697,7 @@ SI = baliser_suppressions_internes(productions_par_personne)
                 prod_fin = productions[i-1].rt[modif.end::]
                 texte_balise = prod_debut + "<S>" + differ + "</S>" + prod_fin
                 productions[i].rt_balise = texte_balise
-                
+
             # Si la production est plus longue que la précédente : cas d'un ajout
             #if len(productions[i].rt) > len(productions[i-1].rt) :
 
@@ -634,7 +721,7 @@ SI = baliser_suppressions_internes(productions_par_personne)
                     prod_fin = productions[i].rt[modif.end::]
                     texte_balise = prod_debut + "<LA>" + differ + "</LA>" + prod_fin
                     productions[i].rt_balise = texte_balise
-                    
+
             # Si plusieurs caractères sont ajoutés :
             else :
 
@@ -657,9 +744,9 @@ SI = baliser_suppressions_internes(productions_par_personne)
                     productions[i].rt_balise = texte_balise'''
 
 
-'''for participant, productions in productions_par_personne.items() : 
-    if participant == "P+S1" : 
-        for prod in productions : 
+'''for participant, productions in productions_par_personne.items() :
+    if participant == "P+S1" :
+        for prod in productions :
             print("------------")
             print(prod.n_burst)
             print()
