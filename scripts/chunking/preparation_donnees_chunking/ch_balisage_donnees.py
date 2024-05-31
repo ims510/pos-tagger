@@ -445,6 +445,77 @@ def trier_nburst(dico_personnes) :
 
 
 
+def baliser_erreurs(dico_prod) :
+
+    for personne, prod in dico_prod.items() :
+
+        # Pour chaque production de chaque personne :
+        for i in range(1, len(prod)) :
+
+            # 1. Si la production contient une erreur du type "Suppression de caractères à l'intérieur d'un mot" :
+            if prod[i].cat_error == "Suppression de caractères à l'intérieur d'un mot" :
+
+                # S'il y a une seule suppression interne :
+                if len(prod[i].token_erronne.split('|')) == 1 :
+
+                    # on balise le burst en remplaçant le token erroné par sa correction entre balises
+                    burst_balise = prod[i].charBurst.replace(prod[i].token_erronne, f"<SI>{prod[i].correction}</SI>")
+
+                    # on remplace les espaces "␣" du burst balisé par des espaces classiques
+                    burst_balise_espaces = burst_balise.replace("␣", " ")
+
+                    # on remplace le burst par le burst balisé dans le running texte
+                    rt_balise = prod[i].rt.replace(prod[i].burst, burst_balise_espaces)
+                    prod[i].rt_balise = rt_balise
+
+
+                    #print(rt_balise)
+                    #print("--------------------------------------------------------------------------------------")
+
+                # S'il y a plusieurs suppressions internes :
+                if len(prod[i].token_erronne.split('|')) > 1 :
+
+                    # on recrée les couples (token erroné, correction)
+                    err = prod[i].token_erronne.split('|')
+                    corr = prod[i].correction.split('|')
+                    couples = list(zip(err, corr))
+
+                    charburst_balise = prod[i].charBurst
+
+                    '''# pour chaque couple :
+                    for couple in couples :
+
+                        print(couple)
+                        #burst_balise = prod[i].charBurst.replace(couple[0], f"<SI>{couple[1]}</SI>")
+                        charburst_balise = charburst_balise.replace(couple[0], f"<SI>{couple[1]}</SI>")
+
+
+                    print(charburst_balise)
+                    print("--------------------------------------------------------------------------------------")'''
+
+
+
+
+
+
+                    '''# Intégrer les balises au running text balisé
+                    burst_sans_balises = charburst_balise_espaces.replace("<SI>", "")
+                    burst_sans_balises = burst_sans_balises.replace("</SI>", "")
+                    prod[i].rt_balise = prod[i].rt_balise.replace(burst_sans_balises, charburst_balise_espaces)
+
+                    print(prod[i].charBurst)
+                    print(prod[i].burst)
+                    print(prod[i].token_erronne)
+                    print(prod[i].correction)
+                    print(prod[i].rt_balise)
+                    print("-----------------------------------------")'''
+
+
+
+
+
+
+
 def baliser_suppressions_internes(dico_prod) :
 
     for personne, prod in dico_prod.items() :
@@ -458,17 +529,16 @@ def baliser_suppressions_internes(dico_prod) :
                 # S'il y a une seule suppression interne :
                 if len(prod[i].token_erronne.split('|')) == 1 :
 
-                    # On balise le charburst
+                    # On balise le charburst dans une variable
                     charburst_balise = prod[i].charBurst.replace(prod[i].token_erronne, f"<SI>{prod[i].correction}</SI>")
-                    prod[i].charBurst = charburst_balise.replace("␣", " ")
+                    charburst_balise_espaces = charburst_balise.replace("␣", " ")
 
                     # Intégrer les balises au running text balisé
-                    burst_sans_balises = prod[i].charBurst.replace("<SI>", "")
+                    burst_sans_balises = charburst_balise_espaces.replace("<SI>", "")
                     burst_sans_balises = burst_sans_balises.replace("</SI>", "")
-                    prod[i].rt_balise = prod[i].rt_balise.replace(burst_sans_balises, prod[i].charBurst)
+                    prod[i].rt_balise = prod[i].rt_balise.replace(burst_sans_balises, charburst_balise_espaces)
 
-
-                # S'il y a plusieurs suppressions internes :
+                '''# S'il y a plusieurs suppressions internes :
                 if len(prod[i].token_erronne.split('|')) > 1 :
 
                     # On recrée les couples (token_errone, correction)
@@ -489,7 +559,54 @@ def baliser_suppressions_internes(dico_prod) :
                     burst_sans_balises = burst_sans_balises.replace("</SI>", "")
                     prod[i].rt_balise = prod[i].rt_balise.replace(burst_sans_balises, prod[i].charBurst)
 
-                print(f"{prod[i].charBurst}")
+                    print(f"{prod[i].charBurst}")'''
+
+                # S'il y a plusieurs suppressions internes :
+                if len(prod[i].token_erronne.split('|')) > 1 :
+
+                    # On recrée les couples (token_errone, correction)
+                    err = prod[i].token_erronne.split('|')
+                    corr = prod[i].correction.split('|')
+                    couples = list(zip(err, corr))
+
+                    # On initialise le charburst qu'on va baliser
+                    charburst_balise = prod[i].charBurst
+
+                    # Pour chaque couple, on balise le charburst
+                    for couple in couples :
+                        charburst_balise = charburst_balise.replace(couple[0], f"<SI>{couple[1]}</SI>")
+                        #prod[i].charBurst = charburst_balise.replace("␣", " ")
+                        charburst_balise_espaces = charburst_balise.replace("␣", " ")
+                        #charburst_balise_espaces = charburst_balise_espaces.replace("⌫", "")
+
+                    #print(charburst_balise_espaces)
+
+                    # Intégrer les balises au running text balisé
+                    burst_sans_balises = charburst_balise_espaces.replace("<SI>", "")
+
+                    burst_sans_balises = burst_sans_balises.replace("</SI>", "")
+
+                    #toto = prod[i].rt_balise.replace(burst_sans_balises, charburst_balise_espaces)
+                    #toto = prod[i].rt_balise.replace(prod[i].burst, charburst_balise_espaces)
+                    toto = prod[i].rt.replace(prod[i].burst, charburst_balise_espaces)
+                    prod[i].rt_balise = toto.replace("⌫", "")
+
+
+
+                    '''print(prod[i].rt_balise)
+                    #print(burst_sans_balises)
+                    print(prod[i].burst)
+                    print(charburst_balise_espaces)
+                    print("**********")
+                    print(toto)
+                    print("**********")
+                    print("-----------------------------------------------")'''
+
+                    #prod[i].rt_balise = prod[i].rt_balise.replace(burst_sans_balises, charburst_balise_espaces)
+
+                    #print(f"{prod[i].rt_balise}")
+
+                print(prod[i].rt_balise)
 
 
             # 2. Si la production contient une erreur du type "Lettre unique ajoutée" :
@@ -653,104 +770,275 @@ productions_par_personne = recuperer_productions(lignes_enrichies, participants_
 # Baliser le texte de chaque personne en fonction des types d'erreurs
 
 # Baliser les suppressions internes (texte balisé stocké dans le charBurst)
-SI = baliser_suppressions_internes(productions_par_personne)
+#SI = baliser_suppressions_internes(productions_par_personne)
+
+annotation_erreurs = baliser_erreurs(productions_par_personne)
 
 
+'''for personne, prod in productions_par_personne.items() :
 
+    # Pour chaque production de chaque personne :
+    for i in range(0, len(prod)) :
 
+        if prod[i].ID == "P+S19" :
 
-
-
-
-'''for prod in productions_par_personne["P+S1"] :
-    print(prod.ID)
-    print(prod.n_burst)
-    print(prod.erreur)
-    print(prod.cat_error)
-    print(prod.rt)
-    print("------------")
-'''
-
-
-
-'''for participant, productions in productions_par_personne.items() :
-
-    # Itérer sur chaque production
-    for i in range(1, len(productions)) :
-
-        # Trouver la différence entre la production et celle d'avant
-        modif = difference_between(productions[i].rt, productions[i-1].rt)
-
-
-        # S'il n'y a pas de modification, le texte_balise correspond au running text
-        if modif.start == None or modif.end == None or modif.difference == None :
-            productions[i].rt_balise = productions[i].rt
-
-        # S'il y a une modification :
-        else :
-
-            # Si la production est plus courte que la précédente : cas d'une suppression
-            if len(productions[i].rt) < len(productions[i-1].rt) :
-
-                prod_debut = productions[i-1].rt[0:modif.start]
-                differ = modif.difference
-                prod_fin = productions[i-1].rt[modif.end::]
-                texte_balise = prod_debut + "<S>" + differ + "</S>" + prod_fin
-                productions[i].rt_balise = texte_balise
-
-            # Si la production est plus longue que la précédente : cas d'un ajout
-            #if len(productions[i].rt) > len(productions[i-1].rt) :
-
-            # Si un seul caractère est ajouté :
-            if len(modif.difference.strip()) == 1 :
-
-                # Si le caractère est un espace :
-                if modif.difference.strip() == ' ' :
-
-                    prod_debut = productions[i].rt[0:modif.start]
-                    differ = modif.difference
-                    prod_fin = productions[i].rt[modif.end::]
-                    texte_balise = prod_debut + "<EA>" + differ + "</EA>" + prod_fin
-                    productions[i].rt_balise = texte_balise
-
-                # Si le caractère est une lettre
-                else :
-
-                    prod_debut = productions[i].rt[0:modif.start]
-                    differ = modif.difference
-                    prod_fin = productions[i].rt[modif.end::]
-                    texte_balise = prod_debut + "<LA>" + differ + "</LA>" + prod_fin
-                    productions[i].rt_balise = texte_balise
-
-            # Si plusieurs caractères sont ajoutés :
-            else :
-
-                # Si les caractères ajoutés correspondent à un mot :
-                if len(modif.difference.split()) == 1 :
-
-                    prod_debut = productions[i].rt[0:modif.start]
-                    differ = modif.difference
-                    prod_fin = productions[i].rt[modif.end::]
-                    texte_balise = prod_debut + "<MI>" + differ + "</MI>" + prod_fin
-                    productions[i].rt_balise = texte_balise
-
-                # Si les caractères ajoutés correspondent à une chaîne de mots :
-                else :
-
-                    prod_debut = productions[i].rt[0:modif.start]
-                    differ = modif.difference
-                    prod_fin = productions[i].rt[modif.end::]
-                    texte_balise = prod_debut + "<CI>" + differ + "</CI>" + prod_fin
-                    productions[i].rt_balise = texte_balise'''
-
-
-'''for participant, productions in productions_par_personne.items() :
-    if participant == "P+S1" :
-        for prod in productions :
-            print("------------")
-            print(prod.n_burst)
+            print(prod[i].n_burst)
+            print(prod[i].rt)
             print()
-            print(prod.rt_balise)
-            print("------------")'''
+            print(f"{prod[i].token_erronne} ; {prod[i].contexte} ; {prod[i].correction} ; {prod[i].startPos} ; {prod[i].endPos} ; {prod[i].cat_error}")
+            print(prod[i].charBurst)
+            print(prod[i].burst)
+            print(prod[i-1].rt[0:prod[i].startPos])
+            print(prod[i-1].rt[prod[i].startPos:prod[i].endPos])
+            print(prod[i].rt[prod[i].startPos:prod[i].endPos])
+            print("-"*100)'''
+
+
+def corriger_chaine(chaine):
+    result = []
+    for char in chaine:
+        if char == "⌫":
+            if result:
+                result.pop()  # Supprime le dernier caractère ajouté
+        else:
+            result.append(char)  # Ajoute le caractère au résultat
+    return ''.join(result)
+
+
+for personne, prod in productions_par_personne.items() :
+
+    # Pour chaque production de chaque personne :
+    for i in range(0, len(prod)) :
+
+        if prod[i].ID == "P+S1" :
+
+            # Si la production n'a pas d'erreur :
+            if prod[i].cat_error == "0" :
+
+                # Si son charBurst commence par ⌫ :
+                if prod[i].charBurst.startswith("⌫") :
+
+                    # On compte le nombre de ⌫ à la suite
+                    n=0
+                    for char in prod[i].charBurst :
+                        if char =="⌫" :
+                            n+=1
+                        else :
+                            break
+
+                    couple = (prod[i-1].rt, n)
+
+
+                    partie_a_supprimer = prod[i].rt[prod[i].startPos:prod[i].endPos]
+
+                    #print(couple)
+                    #print(prod[i].n_burst)
+
+                    # On supprime les n derniers caractères du running text de la production précédente
+
+                    #print(prod[i-1].rt.replace(" ", "␣"))
+
+                    rt_avec_suppressions = prod[i-1].rt[:-n]
+                    #print(rt_avec_suppressions)
+
+                else :
+
+
+
+                    #print(prod[i-1].rt.replace(" ", "␣"))
+
+                    toto = prod[i-1].rt.replace(" ", "␣") + prod[i].burst.replace(" ", "␣")
+                    #print(toto)
+                    #print(prod[i].rt.replace(" ", "␣"))
+                    #print("-"*150)
+
+            if prod[i].cat_error == "Lettre unique ajoutée" :
+
+                if len(prod[i].charBurst) == 1 :
+
+                    if prod[i].charBurst == "␣" :
+
+                        burst_balise = f"<EA>{prod[i].charBurst}</EA>"
+                        rt_avant_ajout = prod[i].rt[0:prod[i].startPos]
+                        lettre_ajoutee_balisee = burst_balise
+                        rt_apres_ajout = prod[i].rt[prod[i].startPos+len(prod[i].charBurst)::]
+                        rt_balise = rt_avant_ajout + lettre_ajoutee_balisee + rt_apres_ajout
+                        prod[i].rt_balise = rt_balise
+
+                    else :
+
+                        burst_balise = f"<LA>{prod[i].charBurst}</LA>"
+                        rt_avant_ajout = prod[i].rt[0:prod[i].startPos]
+                        lettre_ajoutee_balisee = burst_balise
+                        rt_apres_ajout = prod[i].rt[prod[i].startPos+len(prod[i].charBurst)::]
+                        rt_balise = rt_avant_ajout + lettre_ajoutee_balisee + rt_apres_ajout
+                        prod[i].rt_balise = rt_balise
+
+                else :
+
+                    if prod[i].charBurst.startswith("⌫") :
+
+                        n=0
+                        for char in prod[i].charBurst :
+                            if char == "⌫" :
+                                n+= 1
+                            else :
+                                break
+
+                        if n == 1 :
+
+                            burst_balise = f"<LR>{prod[i].burst}</LR>"
+                            rt_avant_ajout = prod[i].rt[0:prod[i].startPos-n]
+                            lettre_remplacante_balisee = burst_balise
+                            rt_apres_ajout = prod[i-1].rt[prod[i].startPos::]
+                            rt_balise = rt_avant_ajout + lettre_remplacante_balisee + rt_apres_ajout
+                            prod[i].rt_balise = rt_balise
+
+                        else :
+
+                            burst_balise = f"<LS>{prod[i].burst}</LS>"
+                            rt_avant_ajout = prod[i].rt[0:prod[i].startPos-n]
+                            lettre_remplacante_balisee = burst_balise
+                            rt_apres_ajout = prod[i-1].rt[prod[i].startPos::]
+                            rt_balise = rt_avant_ajout + lettre_remplacante_balisee + rt_apres_ajout
+                            prod[i].rt_balise = rt_balise
+
+
+            if prod[i].cat_error == "Mot inséré entre deux mots" :
+
+                burst_balise = f"<MI>{prod[i].burst}</MI>"
+                rt_avant_insertion = prod[i-1].rt[0:prod[i].startPos]
+                rt_apres_insertion = prod[i-1].rt[prod[i].startPos::]
+                rt_balise = rt_avant_insertion + burst_balise + rt_apres_insertion
+                prod[i].rt_balise = rt_balise
+
+
+            if prod[i].cat_error == "Partie d'une chaîne insérée entre deux mots" :
+
+                if prod[i].charBurst.startswith("⌫") :
+
+                    n=0
+                    for char in prod[i].charBurst :
+                        if char == "⌫" :
+                            n+= 1
+                        else :
+                            break
+
+                    burst_balise = f"<CS>{prod[i].burst}</CS>"
+                    rt_avant_ajout = prod[i].rt[0:prod[i].startPos-n]
+                    lettre_remplacante_balisee = burst_balise
+                    rt_apres_ajout = prod[i-1].rt[prod[i].startPos::]
+                    rt_balise = rt_avant_ajout + lettre_remplacante_balisee + rt_apres_ajout
+                    prod[i].rt_balise = rt_balise
+
+                else :
+
+                    burst_balise = f"<CI>{prod[i].burst}</CI>"
+                    rt_avant_insertion = prod[i-1].rt[0:prod[i].startPos]
+                    rt_apres_insertion = prod[i-1].rt[prod[i].startPos::]
+                    rt_balise = rt_avant_insertion + burst_balise + rt_apres_insertion
+                    prod[i].rt_balise = rt_balise
+
+
+            if prod[i].cat_error == "Backspaces supprimant une chaîne" :
+
+                n=0
+                for char in prod[i].charBurst :
+                    if char == "⌫" :
+                        n+= 1
+
+                chaine_supprimee_balisee = f"<SB>{prod[i].contexte}</SB>"
+                rt_avant_suppression = prod[i-1].rt[0:prod[i].startPos-n]
+                rt_apres_suppression = prod[i-1].rt[prod[i].startPos::]
+                rt_balise = rt_avant_suppression + chaine_supprimee_balisee + rt_apres_suppression
+                prod[i].rt_balise = rt_balise
+
+
+            if prod[i].cat_error == "Deletes supprimant une chaîne" :
+
+                n=0
+                for char in prod[i].charBurst :
+                    if char == "⌦" :
+                        n+= 1
+
+                chaine_supprimee_balisee = f"<SD>{prod[i].contexte}</SD>"
+                rt_avant_suppression = prod[i-1].rt[0:prod[i].startPos]
+                rt_apres_suppression = prod[i-1].rt[prod[i].startPos+n::]
+                rt_balise = rt_avant_suppression + chaine_supprimee_balisee + rt_apres_suppression
+                prod[i].rt_balise = rt_balise
+
+
+            if prod[i].cat_error == "Suppression de caractères à l'intérieur d'un mot" :
+
+                # S'il y a une seule suppression interne :
+                if len(prod[i].token_erronne.split('|')) == 1 :
+
+                    rt_avec_charburst = prod[i].rt[0:prod[i].startPos] + prod[i].charBurst
+                    chaine_corrigee = corriger_chaine(rt_avec_charburst)
+
+                    rt_avant_suppr_interne = chaine_corrigee[0:len(chaine_corrigee)-len(prod[i].burst)]
+                    suppr_interne = chaine_corrigee[len(chaine_corrigee)-len(prod[i].burst):len(chaine_corrigee)+len(prod[i].burst)].replace("␣", " ")
+                    suppr_interne_balisee = f"<SI>{suppr_interne}</SI>"
+
+                    modif = difference_between(prod[i].rt, rt_avant_suppr_interne+suppr_interne)
+                    rt_apres_suppr_interne = modif.difference
+
+                    rt_balise = rt_avant_suppr_interne + suppr_interne_balisee + rt_apres_suppr_interne
+                    prod[i].rt_balise = rt_balise
+
+
+                # S'il y a plusieurs suppressions internes :
+                if len(prod[i].token_erronne.split('|')) > 1 :
+
+                    # On recrée les couples (token_errone, correction)
+                    err = prod[i].token_erronne.split('|')
+                    corr = prod[i].correction.split('|')
+                    couples = list(zip(err, corr))
+
+                    # On initialise le charburst qu'on va baliser
+                    charburst_balise = prod[i].charBurst
+
+                    # Pour chaque couple, on balise le charburst balisé
+                    for couple in couples :
+                        charburst_balise = charburst_balise.replace(couple[0], f"<SI>{couple[1]}</SI>")
+                    prod[i].charBurst = charburst_balise.replace("␣", " ")
+
+                    # Intégrer les balises au running text balisé
+                    burst_sans_balises = prod[i].charBurst.replace("<SI>", "")
+                    burst_sans_balises = burst_sans_balises.replace("</SI>", "")
+                    prod[i].rt_balise = prod[i].rt_balise.replace(burst_sans_balises, prod[i].charBurst)
+
+                    print(f"{prod[i].charBurst}")
+
+                    print(prod[i].rt)
+
+
+
+
+                    print("-"*120)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
