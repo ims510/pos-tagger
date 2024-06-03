@@ -13,6 +13,7 @@ Created on Sat Jun  1 10:02:35 2024
 from ch_enrichir_donnees import ouvrir_csv, csv_to_lines, combiner_lignes, enrichir_productions, get_persons, trier_nburst, recuperer_productions
 from ch_datastructure import Diff, Production
 from typing import Dict, List
+import re
 
 
 
@@ -30,12 +31,51 @@ def corriger_chaine(chaine: str) -> str :
         chaîne avec les suppressions effectuées
     """
     result = []
+    for char in chaine :
+        if char == "⌫" :
+            if result :
+                result.pop()  # Supprime le dernier caractère ajouté
+        else :
+            result.append(char)  # Ajoute le caractère au résultat
+    return ''.join(result)
+
+
+
+def corriger_chaine_avec_balises(chaine: str, chaine_corrigee: str) -> str:
+    """Balise les suppressions dans une chaîne corrigée selon les caractères de suppression dans la chaîne originale.
+
+    Parameters
+    ----------
+    chaine : str
+        chaîne originale contenant des backspaces
+    chaine_corrigee : str
+        chaîne avec les suppressions effectuées
+
+    Returns
+    -------
+    str
+        chaîne corrigée avec balises autour des caractères affectés par les suppressions.
+    """
+    result = []
+    j = 0  # Index pour la chaîne corrigée
+    suppression_buffer = []
+
     for char in chaine:
         if char == "⌫":
             if result:
-                result.pop()  # Supprime le dernier caractère ajouté
+                suppression_buffer.append(result.pop())
         else:
-            result.append(char)  # Ajoute le caractère au résultat
+            if suppression_buffer:
+                result.append('<SI>' + ''.join(suppression_buffer[::-1]) + '</SI>')
+                suppression_buffer = []
+            if j < len(chaine_corrigee):
+                result.append(chaine_corrigee[j])
+                j += 1
+
+    # Ajouter les suppressions restantes à la fin
+    if suppression_buffer:
+        result.append('<SI>' + ''.join(suppression_buffer[::-1]) + '</SI>')
+
     return ''.join(result)
 
 
@@ -146,6 +186,71 @@ def difference_between(chaine_1: str, chaine_2: str) -> Diff :
 
 
 
+def get_position_char_unique(chaine: str, balise: str) -> str :
+    """Renvoie la position de la balise dans le mot dans lequel un caractère a été ajouté.
+
+    Parameters
+    ----------
+    chaine : str
+        chaine contenant le mot auquel on a ajouté une lettre balisée
+    balise : str
+        type de balise
+
+    Returns
+    -------
+    str
+        position de la modification dans le mot (début, milieu, ou fin)
+    """
+
+    # On découpe le texte en mots
+    mots = chaine.split()
+
+    # Pour chaque mot :
+    for mot in mots :
+
+        # S'il contient la balise recherchée :
+        if mot.__contains__(f"<{balise}>") :
+            mot_balise = mot
+
+            # On trouve la position du caractère balisé
+            position = 1
+            for char in mot_balise :
+                if char != "<" :
+                    position += 1
+                else :
+                    break
+
+            # On enlève les balises au mot
+            mot_balise_sans_balises = mot_balise.replace(f"<{balise}>", "")
+            mot_balise_sans_balises = mot_balise_sans_balises.replace(f"</{balise}>", "")
+
+            # On enlève aussi les éventuelles ponctuations
+            mot_sans_ponctuations = ''
+            for char in mot_balise_sans_balises :
+                if char.isalpha() and char != "⌫" :
+                    mot_sans_ponctuations += char
+                else :
+                    break
+
+            # On trouve le nombre de caractères du mot
+            nb_char = len(mot_sans_ponctuations)
+
+            # On reconstitue un tuple dont le premier élément est la position du carcatère balisé et le second le nombre de caractères du mot
+            #position_lettre = (position, nb_char)
+
+            # Associer au tuple une valeur entre début, milieu, et fin
+            if position == 1 :
+                position_str = "début"
+            if position == nb_char :
+                position_str = "fin"
+            else :
+                position_str = "milieu"
+
+
+            return position_str
+
+
+
 def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Dict[str, List[Production]] :
     """Balise chaque running text en fonction des erreurs détectées.
 
@@ -173,6 +278,41 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     # Si son charBurst commence par ⌫ :
                     if prod[i].charBurst.startswith("⌫") :
 
+
+
+
+                        # On corrige le charBurst en effectuant les suppressions indiquées par les backspaces
+                        #rt_avec_charburst = prod[i].rt.replace(prod[i].burst, prod[i].charBurst)
+                        rt_avec_charburst = prod[i-1].rt + prod[i].charBurst
+                        rt_avec_charburst_corrige = corriger_chaine(rt_avec_charburst)
+
+                        # On balise la correction du charBurst
+                        rt_avec_charburst_corrige_balise = corriger_chaine_avec_balises(rt_avec_charburst, rt_avec_charburst_corrige)
+
+                        # On remplace les espaces "␣" par des espaces simples
+                        rt_avec_charburst_corrige_balise_espaces = rt_avec_charburst_corrige_balise.replace("␣", " ")
+
+                        # On remplace le burst par le charburst corrigé et balisé dans le running text
+                        rt_balise = prod[i].rt.replace(prod[i].burst, rt_avec_charburst_corrige_balise_espaces)
+
+                        # On remplace les balises par <RB> pour "Révision de bord"
+                        #rt_balise_balises_ouvrantes_correctes = rt_balise.replace("<SI>", "<RB>")
+                        #rt_balises_correctes = rt_balise_balises_ouvrantes_correctes.replace("</SI>", "</RB>")
+
+                        prod[i].rt_balise = rt_balise
+
+                        '''if prod[i].ID == "P+S1" :
+
+                            print("@@@@@@@@@@")
+
+                            print(rt_balise)
+
+                            print("@@@@@@@@@@")'''
+
+
+
+
+
                         # On compte le nombre de ⌫ à la suite
                         n=0
                         for char in prod[i].charBurst :
@@ -193,7 +333,7 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
                         #print(prod[i-1].rt.replace(" ", "␣"))
 
-                        toto = prod[i-1].rt.replace(" ", "␣") + prod[i].burst.replace(" ", "␣")
+                        #toto = prod[i-1].rt.replace(" ", "␣") + prod[i].burst.replace(" ", "␣")
 
                         prod[i].rt_balise = prod[i].rt
 
@@ -201,7 +341,7 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                 # Si la production a pour erreur "Lettre unique ajoutée" :
                 if prod[i].cat_error == "Lettre unique ajoutée" :
 
-                    # S'il s'agit simplement d'un caractère :
+                    # S'il s'agit simplement d'un caractère sans suppression :
                     if len(prod[i].charBurst) == 1 :
 
                         # S'il s'agit d'un espace :
@@ -215,7 +355,15 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             lettre_ajoutee_balisee = burst_balise
                             rt_apres_ajout = prod[i].rt[prod[i].startPos+len(prod[i].charBurst)::]
                             rt_balise = rt_avant_ajout + lettre_ajoutee_balisee + rt_apres_ajout
+
+                            # On ajoute les attributs "char", "mots", "operation", et "suppr"
+                            char = len(prod[i].charBurst)
+                            mots = len(prod[i].burst.strip().split())
+                            operation = 'ajout'
+                            suppr = 0
+                            rt_balise = rt_balise.replace("<EA>", f"<EA char={char} mots={mots} operation='{operation}' suppr={suppr}>")
                             prod[i].rt_balise = rt_balise
+
 
                         # S'il s'agit d'une lettre :
                         if prod[i].charBurst.isalpha() :
@@ -228,20 +376,16 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             lettre_ajoutee_balisee = burst_balise
                             rt_apres_ajout = prod[i].rt[prod[i].startPos+len(prod[i].charBurst)::]
                             rt_balise = rt_avant_ajout + lettre_ajoutee_balisee + rt_apres_ajout
+
+                            # On ajoute les attributs "char", "mots", "operation", "suppr", et "position"
+                            char = len(prod[i].burst)
+                            mots = len(prod[i].burst.strip().split())
+                            operation = 'ajout'
+                            suppr = 0
+                            position = get_position_char_unique(rt_balise, 'LA')
+                            rt_balise = rt_balise.replace("<LA>", f"<LA char={char} mots={mots} operation='{operation}' suppr={suppr} position='{position}'>")
                             prod[i].rt_balise = rt_balise
 
-                        # Sinon (s'il s'agit d'une ponctuation) :
-                        else :
-
-                            # On balise le burst <PA> pour "Ponctuation ajoutée"
-                            burst_balise = f"<PA>{prod[i].charBurst}</PA>"
-
-                            # On incrémente le running text balisé avec la ponctuation ajoutée balisée
-                            rt_avant_ajout = prod[i].rt[0:prod[i].startPos]
-                            lettre_ajoutee_balisee = burst_balise
-                            rt_apres_ajout = prod[i].rt[prod[i].startPos+len(prod[i].charBurst)::]
-                            rt_balise = rt_avant_ajout + lettre_ajoutee_balisee + rt_apres_ajout
-                            prod[i].rt_balise = rt_balise
 
                     # Si le charburst contient plusieurs caractères :
                     else :
@@ -261,27 +405,46 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             if n == 1 :
 
                                 # On balise la lettre ajoutée <LR> pour "Lettre remplaçant une autre"
-                                burst_balise = f"<LR>{prod[i].burst}</LR>"
+                                #burst_balise = f"<LR suppr={n}>{prod[i].burst}</LR>"
+                                burst_balise = f"<LA>{prod[i].burst}</LA>"
 
                                 # On incrémente le running text balisé avec la lettre remplaçante balisée
                                 rt_avant_ajout = prod[i].rt[0:prod[i].startPos-n]
                                 lettre_remplacante_balisee = burst_balise
                                 rt_apres_ajout = prod[i-1].rt[prod[i].startPos::]
                                 rt_balise = rt_avant_ajout + lettre_remplacante_balisee + rt_apres_ajout
+
+                                # On ajoute les attributs "char", "mots", "operation", "suppr", et "position"
+                                char = len(prod[i].burst)
+                                mots = len(prod[i].burst.strip().split())
+                                operation = 'remplacement'
+                                suppr = n
+                                position = get_position_char_unique(rt_balise, 'LA')
+                                rt_balise = rt_balise.replace("<LA>", f"<LA char={char} mots={mots} operation='{operation}' suppr={suppr} position='{position}'>")
                                 prod[i].rt_balise = rt_balise
+
 
                             # Sinon (s'il y a plusieurs backspaces) :
                             else :
 
                                 # On balise la lettre ajoutée <LS> pour "Lettre supprimant une chaîne"
-                                burst_balise = f"<LS>{prod[i].burst}</LS>"
+                                burst_balise = f"<LA>{prod[i].burst}</LA>"
 
                                 # On incrémente le running text balisé avec la lettre supprimante balisée
                                 rt_avant_ajout = prod[i].rt[0:prod[i].startPos-n]
                                 lettre_remplacante_balisee = burst_balise
                                 rt_apres_ajout = prod[i-1].rt[prod[i].startPos::]
                                 rt_balise = rt_avant_ajout + lettre_remplacante_balisee + rt_apres_ajout
+
+                                # On ajoute les attributs "char", "mots", "operation", "suppr", et "position"
+                                char = len(prod[i].burst)
+                                mots = len(prod[i].burst.strip().split())
+                                operation = 'suppression'
+                                suppr = n
+                                position = get_position_char_unique(rt_balise, 'LA')
+                                rt_balise = rt_balise.replace("<LA>", f"<LA char={char} mots={mots} operation='{operation}' suppr={suppr} position='{position}'>")
                                 prod[i].rt_balise = rt_balise
+
 
 
                 # Si la production a pour erreur "Mot inséré entre deux mots" :
@@ -294,7 +457,30 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     rt_avant_insertion = prod[i-1].rt[0:prod[i].startPos]
                     rt_apres_insertion = prod[i-1].rt[prod[i].startPos::]
                     rt_balise = rt_avant_insertion + burst_balise + rt_apres_insertion
+
+                    # On trouve le nombre de caractères supprimés par le mot et on en déduit l'opération
+                    nb_suppr = 0
+                    for char in prod[i].charBurst :
+                        if char == "⌫" :
+                            nb_suppr += 1
+                        else :
+                            break
+
+                    if nb_suppr == 0 :
+                        op = 'ajout'
+                    elif nb_suppr == len(prod[i].burst) :
+                        op = 'remplacement'
+                    else :
+                        op = 'suppression'
+
+                    # On ajoute les attributs "char", "mots", "operation", et "suppr"
+                    char = len(prod[i].burst.strip())
+                    mots = len(prod[i].burst.strip().split())
+                    operation = op
+                    suppr = nb_suppr
+                    rt_balise = rt_balise.replace("<MI>", f"<MI char={char} mots={mots} operation='{operation}' suppr={suppr}>")
                     prod[i].rt_balise = rt_balise
+
 
 
                 # Si la production a pour erreur "Partie d'une chaîne insérée entre deux mots" :
@@ -311,14 +497,31 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             else :
                                 break
 
-                        # On balise le burst <CS> pour "Chaîne supprimant une chaîne"
-                        burst_balise = f"<CS>{prod[i].burst}</CS>"
+                        # On balise le burst <CI> pour "Chaîne insérée"
+                        burst_balise = f"<CI>{prod[i].burst}</CI>"
 
                         # On incrémente le running text balisé avec la chaîne insérée balisée
                         rt_avant_ajout = prod[i].rt[0:prod[i].startPos-n]
                         lettre_remplacante_balisee = burst_balise
                         rt_apres_ajout = prod[i-1].rt[prod[i].startPos::]
                         rt_balise = rt_avant_ajout + lettre_remplacante_balisee + rt_apres_ajout
+
+                        # On trouve le nombre de caractères supprimés par le mot et on en déduit l'opération
+                        nb_suppr = n
+
+                        if nb_suppr == 0 :
+                            op = 'ajout'
+                        elif nb_suppr == len(prod[i].burst) :
+                            op = 'remplacement'
+                        else :
+                            op = 'suppression'
+
+                        # On ajoute les attributs "char", "mots", "operation", et "suppr"
+                        char = len(prod[i].burst.strip())
+                        mots = len(prod[i].burst.strip().split())
+                        operation = op
+                        suppr = nb_suppr
+                        rt_balise = rt_balise.replace(f"<CI>{prod[i].burst}</CI>", f"<CI char={char} mots={mots} operation='{op}' suppr={suppr}>{prod[i].burst}</CI>")
                         prod[i].rt_balise = rt_balise
 
                     # Sinon (si le charburst ne commence pas par un backspace) :
@@ -331,7 +534,25 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                         rt_avant_insertion = prod[i-1].rt[0:prod[i].startPos]
                         rt_apres_insertion = prod[i-1].rt[prod[i].startPos::]
                         rt_balise = rt_avant_insertion + burst_balise + rt_apres_insertion
+
+                        # On trouve le nombre de caractères supprimés par le mot et on en déduit l'opération
+                        nb_suppr = 0
+
+                        if nb_suppr == 0 :
+                            op = 'ajout'
+                        elif nb_suppr == len(prod[i].burst) :
+                            op = 'remplacement'
+                        else :
+                            op = 'suppression'
+
+                        # On ajoute les attributs "char", "mots", "operation", et "suppr"
+                        char = len(prod[i].burst.strip())
+                        mots = len(prod[i].burst.strip().split())
+                        operation = op
+                        suppr = nb_suppr
+                        rt_balise = rt_balise.replace(f"<CI>{prod[i].burst}</CI>", f"<CI char={char} mots={mots} operation='{op}' suppr={suppr}>{prod[i].burst}</CI>")
                         prod[i].rt_balise = rt_balise
+
 
 
                 # Si la production a pour erreur "Backspaces supprimant une chaîne" :
@@ -350,7 +571,15 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     rt_avant_suppression = prod[i-1].rt[0:prod[i].startPos-n]
                     rt_apres_suppression = prod[i-1].rt[prod[i].startPos::]
                     rt_balise = rt_avant_suppression + chaine_supprimee_balisee + rt_apres_suppression
+
+                    # On ajoute les attributs "char", "mots", "operation", et "suppr"
+                    char = len(prod[i].charBurst)
+                    mots = len(prod[i].contexte.strip().split())
+                    operation = 'suppression'
+                    suppr = n
+                    rt_balise = rt_balise.replace("<SB>", f"<SB char={char} mots={mots} operation='{operation}' suppr={suppr}>")
                     prod[i].rt_balise = rt_balise
+
 
 
                 # Si la production a pour erreur "Deletes supprimant une chaîne" :
@@ -369,7 +598,18 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     rt_avant_suppression = prod[i-1].rt[0:prod[i].startPos]
                     rt_apres_suppression = prod[i-1].rt[prod[i].startPos+n::]
                     rt_balise = rt_avant_suppression + chaine_supprimee_balisee + rt_apres_suppression
+
+                    # On ajoute les attributs "char", "mots", "operation", et "suppr"
+                    char = len(prod[i].charBurst)
+                    mots = len(prod[i].contexte.strip().split())
+                    operation = 'suppression'
+                    suppr = n
+                    rt_balise = rt_balise.replace("<SD>", f"<SD char={char} mots={mots} operation='{operation}' suppr={suppr}>")
                     prod[i].rt_balise = rt_balise
+
+
+                    if prod[i].ID == "P+S19" :
+                        print(f"{prod[i].ID}\t{prod[i].n_burst}\t{prod[i].burst}\t{prod[i].charBurst}\t{prod[i].rt_balise}")
 
 
                 # Si la production a pour erreur "Suppression de caractères à l'intérieur d'un mot" :
@@ -378,39 +618,21 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     # S'il y a une seule suppression interne :
                     if len(prod[i].token_erronne.split('|')) == 1 :
 
-                        # On ajoute le charburst au running texte qui se situe avant la position de départ du curseur
-                        rt_avec_charburst = prod[i].rt[0:prod[i].startPos] + prod[i].charBurst
+                        # On corrige le charBurst en effectuant les suppressions indiquées par les backspaces
+                        charburst = prod[i].charBurst
+                        charburst_corrige = corriger_chaine(charburst)
 
-                        # On corrige la chaine en effectuant les supprressions indiquées dans le burst
-                        chaine_corrigee = corriger_chaine(rt_avec_charburst)
+                        # On balise la correction du charBurst
+                        charburst_corrige_balise = corriger_chaine_avec_balises(charburst, charburst_corrige)
 
-                        # On balise la suppression interne <SI> pour "Suppression interne"
-                        suppr_interne = chaine_corrigee[len(chaine_corrigee)-len(prod[i].burst):len(chaine_corrigee)+len(prod[i].burst)].replace("␣", " ")
-                        suppr_interne_balisee = f"<SI>{suppr_interne}</SI>"
+                        # On remplace les espaces "␣" par des espaces simples
+                        charburst_corrige_balise_espaces = charburst_corrige_balise.replace("␣", " ")
 
-                        # On identifie la position de début de la chaîne contenant des suppressions internes
-                        rt_avant_suppr_interne = chaine_corrigee[0:len(chaine_corrigee)-len(prod[i].burst)]
+                        # On remplace le burst par le charburst corrigé et balisé dans le running text
+                        rt_balise = prod[i].rt.replace(prod[i].burst, charburst_corrige_balise_espaces)
 
-                        # On trouve la différence entre le running text et le runnung text avant la chaîne contenant les suppressions internes auquel on a ajouté cette chaîne
-                        modif = difference_between(prod[i].rt, rt_avant_suppr_interne+suppr_interne)
-
-                        # On retrouve à partir de cette différence la partie du running text qui suit la chaîne cintenant les suppressions internes
-                        rt_apres_suppr_interne = modif.difference
-
-                        # S'il n'y a pas de différence :
-                        if rt_apres_suppr_interne == None :
-
-                            # On concatène le running text avant la suppression interne avec la suppression interne balisée
-                            rt_balise = rt_avant_suppr_interne + suppr_interne_balisee
-
-                        # Sinon :
-                        else :
-
-                            # On concatène le running text avant la suppression interne avec la suppression interne balisée et le running text après la suppression interne
-                            rt_balise = rt_avant_suppr_interne + suppr_interne_balisee + rt_apres_suppr_interne
-
-                        # On incrémente le running text
-                        prod[i].rt_balise = corriger_chaine(rt_balise)
+                        # On incrémente le running text balisé avec la suppression interne balisée
+                        prod[i].rt_balise = rt_balise
 
 
                     # S'il y a plusieurs suppressions internes :
@@ -455,13 +677,15 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
 
 
-                if prod[i].ID == "P+S1" :
+                '''if prod[i].ID == "P+S1" :
                     print(prod[i].n_burst)
+                    print()
+                    print(prod[i].charBurst)
                     print()
                     print(prod[i].cat_error)
                     print()
                     print(prod[i].rt_balise)
-                    print("-"*120)
+                    print("-"*120)'''
 
 
 
