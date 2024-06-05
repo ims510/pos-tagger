@@ -268,3 +268,31 @@ def get_position_char_unique(chaine: str, balise: str) -> str :
             return position_str
 
 
+
+def remplacer_balise_si(match, compteur) :
+    """
+    Remplace une balise <SI> par une nouvelle balise <SI> avec les attributs prod et char ajoutés.
+
+    Parameters
+    ----------
+    match: re.Match
+        Objet correspondant à la balise <SI> et son contenu.
+    compteur: list
+        Liste contenant le compteur pour suivre le nombre de remplacements
+
+    Returns
+    -------
+    str
+        La nouvelle balise <SI> avec les attributs prod et char ajoutés
+    """
+
+    # Déterminer les attributs prod et char
+    prod_value = "externe" if compteur[0] == 0 else "interne"
+    contenu = match.group(2)
+    longueur = len(contenu)
+
+    # Incrémenter le compteur
+    compteur[0] += 1
+
+    # Retourner la nouvelle balise SI avec les attributs ajoutés
+    return f'<SI prod="{prod_value}" char={longueur}>{contenu}</SI>'
