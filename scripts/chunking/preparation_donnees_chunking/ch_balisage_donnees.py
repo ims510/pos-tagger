@@ -317,11 +317,6 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     # On balise le burst <MI> pour "Mot inséré"
                     burst_balise = f"<MI>{prod[i].burst}</MI>"
 
-                    # On incrémente le running text balisé avec le mot inséré balisé
-                    rt_avant_insertion = prod[i-1].rt[0:prod[i].startPos]
-                    rt_apres_insertion = prod[i-1].rt[prod[i].startPos::]
-                    rt_balise = rt_avant_insertion + burst_balise + rt_apres_insertion
-
                     # On trouve le nombre de caractères supprimés par le mot et on en déduit l'opération
                     nb_suppr = 0
                     for char in prod[i].charBurst :
@@ -336,6 +331,11 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                         op = 'remplacement'
                     else :
                         op = 'suppression'
+
+                    # On incrémente le running text balisé avec le mot inséré balisé
+                    rt_avant_insertion = prod[i-1].rt[0:prod[i].startPos-nb_suppr]
+                    rt_apres_insertion = prod[i-1].rt[prod[i].startPos::]
+                    rt_balise = rt_avant_insertion + burst_balise + rt_apres_insertion
 
                     # On ajoute les attributs "char", "mots", "operation", et "suppr"
                     char = len(prod[i].burst.strip())
@@ -640,9 +640,9 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
 
 
-                #if prod[i].ID == "P+S1" and prod[i].cat_error == "0" and prod[i].charBurst.startswith("⌫") :
+                if prod[i].cat_error == "Mot inséré entre deux mots" :
 
-                if prod[i].ID == "P+S1" and prod[i].cat_error == "Suppression de caractères à l'intérieur d'un mot" :
+                #if prod[i].ID == "P+S1" and prod[i].cat_error == "0" :
 
                 #if prod[i].cat_error == "Lettre unique ajoutée" :
 
@@ -656,14 +656,11 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     print()
                     print(prod[i].cat_error)
                     print("***")
-                    print(prod[i].rt)
+                    print(prod[i-1].rt)
                     print()
                     print(prod[i].burst)
                     print("***")
                     print()
-                    #print(f"Production : {nb_char_avant_suppr >= nb_suppr}")
-                    #print(f"Est ajouté à la suite du running text : {prod[i].rt.strip().endswith(prod[i].burst.strip())}")
-                    #print()
                     print(prod[i].rt_balise)
                     print("-"*120)
 
