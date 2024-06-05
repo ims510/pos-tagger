@@ -13,8 +13,9 @@ Created on Sat Jun  1 10:02:35 2024
 from ch_enrichir_donnees import ouvrir_csv, csv_to_lines, combiner_lignes, enrichir_productions, get_persons, trier_nburst, recuperer_productions
 from typing import Dict, List
 from ch_datastructure import Diff, Production
-from ch_outils_balisage import corriger_chaine, corriger_chaine_avec_balises, detecter_rb, difference_between, get_position_char_unique
+from ch_outils_balisage import corriger_chaine, corriger_chaine_avec_balises, detecter_rb, difference_between, get_position_char_unique, remplacer_balise_si
 from tqdm import tqdm
+import re
 
 
 
@@ -107,7 +108,7 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
 
                 # Si la production a pour erreur "Lettre unique ajoutée" :
-                if prod[i].cat_error == "Lettre unique ajoutée" :
+                if prod[i].cat_error == "Lettre unique ajoutée" or prod[i].cat_error == "Espace unique ajouté" :
 
                     # S'il s'agit simplement d'un caractère sans suppression :
                     if len(prod[i].charBurst) == 1 :
@@ -521,17 +522,54 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     # Si la production est bien ajoutée à la suite du running text :
                     if prod[i].rt.strip().endswith(prod[i].burst.strip()) == True :
 
-                        # On insère le charburst de la production entre les parties du running text avant et après la modification
-                        rt_normal = rt_avant_revision + prod[i].charBurst + rt_apres_revision
+                        # Si les suppressions de la production n'affectent pas le running text :
+                        if nb_char_avant_suppr >= nb_suppr :
 
-                        # On effectue le balisage des suppressions internes
-                        rt_balise_normal = corriger_chaine_avec_balises(rt_normal)
+                            # On insère le charburst de la production entre les parties du running text avant et après la modification
+                            rt_normal = rt_avant_revision + prod[i].charBurst + rt_apres_revision
 
-                        # On remplace les espaces "␣" par des espaces simples
-                        rt_balise_normal_espaces = rt_balise_normal.replace("␣", " ")
+                            # On effectue le balisage des suppressions internes
+                            rt_balise_normal = corriger_chaine_avec_balises(rt_normal)
 
-                        # On incrémente le running text balisé
-                        prod[i].rt_balise = rt_balise_normal_espaces
+                            # On remplace les espaces "␣" par des espaces simples
+                            rt_balise_normal_espaces = rt_balise_normal.replace("␣", " ")
+
+                            # On récupère toutes les balises avec leur contenu
+                            pattern = re.compile(r'(<SI>)(.*?)(</SI>)')
+
+                            # On ajoute les attributs "prod" et "char" aux balises <SI>
+                            rt_balise_normal_espaces_attributs = re.sub(pattern, lambda match: f"<SI prod='interne' char={len(match.group(2))}>{match.group(2)}</SI>", rt_balise_normal_espaces)
+
+                            # On incrémente le running text balisé
+                            prod[i].rt_balise = rt_balise_normal_espaces_attributs
+
+                        # Sinon (si les suppressions de la production affectent le running text) :
+                        else :
+
+                            # On insère le charburst de la production entre les parties du running text avant et après la modification
+                            rt_normal = rt_avant_revision + prod[i].charBurst + rt_apres_revision
+
+                            # On effectue le balisage des suppressions internes
+                            rt_balise_normal = corriger_chaine_avec_balises(rt_normal)
+
+                            # On remplace les espaces "␣" par des espaces simples
+                            rt_balise_normal_espaces = rt_balise_normal.replace("␣", " ")
+
+                            # On récupère toutes les balises avec leur contenu
+                            pattern = re.compile(r'(<SI>)(.*?)(</SI>)')
+
+                            # On ajoute les attributs "prod" et "char" aux balises <SI>
+                            pattern = re.compile(r'(<SI>)(.*?)(</SI>)')  # Récupération de toutes les balises avec leur contenu
+                            compteur = [0]  # Utilisation d'une liste pour permettre la mise à jour dans lambda
+                            rt_balise_normal_espaces_attributs = re.sub(
+                                pattern,
+                                lambda match: remplacer_balise_si(match, compteur),
+                                rt_balise_normal_espaces
+                            )
+
+                            # On incrémente le running text balisé
+                            prod[i].rt_balise = rt_balise_normal_espaces_attributs
+
 
                     # Sinon (si la production n'est pas ajoutée à la suite du running text) :
                     else :
@@ -548,8 +586,19 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             # On remplace les espaces "␣" par des espaces simples
                             rt_balise_ci_espaces_suite = rt_balise_ci_suite.replace("␣", " ")
 
-                            # On incrémente le running text balisé
-                            prod[i].rt_balise = rt_balise_ci_espaces_suite
+                            # On récupère toutes les balises avec leur contenu
+                            pattern = re.compile(r'(<SI>)(.*?)(</SI>)')
+
+                            # On ajoute les attributs "prod" et "char" aux balises <SI>
+                            rt_balise_ci_espaces_suite_attributs = re.sub(pattern, lambda match: f"<SI prod='interne' char={len(match.group(2))}>{match.group(2)}</SI>", rt_balise_ci_espaces_suite)
+
+                            # On ajoute les attributs "char", "mots", "operation", et "suppr" à la balise <CI>
+                            char = len(prod[i].burst)
+                            mots = len(prod[i].burst.strip().split())
+                            operation = 'ajout'
+                            suppr = 0
+                            rt_balise_ci_espaces_suite_attributs_ci = rt_balise_ci_espaces_suite_attributs.replace("<CI>", f"<CI char={char} mots={mots} operation='{op}' suppr={suppr}>")
+                            prod[i].rt_balise = rt_balise_ci_espaces_suite_attributs_ci
 
                         # Sinon (si les suppressions de la production affectent le running text) :
                         else :
@@ -579,18 +628,42 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             # On insère la modification balisée entre balises <CI> pour "Chaîne insérée" entre les parties du running text avant et après la modification
                             rt_balise_ci_espaces_milieu_final = rt_avant + "<CI>" + rt_pendant + "</CI>" + rt_apres
 
-                            # On incrémente le running text balisé
-                            prod[i].rt_balise = rt_balise_ci_espaces_milieu_final
+                            # On récupère toutes les balises avec leur contenu
+                            pattern = re.compile(r'(<SI>)(.*?)(</SI>)')
+
+                            # On ajoute les attributs "prod" et "char" aux balises <SI>
+                            pattern = re.compile(r'(<SI>)(.*?)(</SI>)')  # Récupération de toutes les balises avec leur contenu
+                            compteur = [0]  # Utilisation d'une liste pour permettre la mise à jour dans lambda
+                            rt_balise_ci_espaces_milieu_final_attributs = re.sub(
+                                pattern,
+                                lambda match: remplacer_balise_si(match, compteur),
+                                rt_balise_ci_espaces_milieu_final
+                            )
+
+                            # On trouve le nombre de caractères supprimés dans le running text par la production et on en déduit l'opération
+                            if nb_suppr-nb_char_avant_suppr == len(prod[i].burst) :
+                                op = 'remplacement'
+                            else :
+                                op = 'suppression'
+
+                            # On ajoute les attributs "char", "mots", "operation", et "suppr" à la balise <CI>
+                            char = len(prod[i].burst)
+                            mots = len(prod[i].burst.strip().split())
+                            operation = op
+                            suppr = nb_suppr-nb_char_avant_suppr
+                            rt_balise_ci_espaces_milieu_final_attributs_ci = rt_balise_ci_espaces_milieu_final_attributs.replace("<CI>", f"<CI char={char} mots={mots} operation='{op}' suppr={suppr}>")
+                            prod[i].rt_balise = rt_balise_ci_espaces_milieu_final_attributs_ci
 
 
 
 
-                if prod[i].ID == "P+S1" and prod[i].cat_error == "Lettre unique ajoutée" :
 
-                    #print(f"{prod[i].ID}\t{prod[i].n_burst}\t{prod[i].burst}\t{prod[i].charBurst}\t{prod[i].rt_balise}")
+                if prod[i].ID == "P+S1" and prod[i].cat_error == "Suppression de caractères à l'intérieur d'un mot" :
+
+                    print(f"{prod[i].ID}\t{prod[i].n_burst}\t{prod[i].burst}\t{prod[i].charBurst}\t{prod[i].rt_balise}")
 
 
-                    print(prod[i].n_burst)
+                    '''print(prod[i].n_burst)
                     print()
                     print(prod[i].charBurst)
                     print()
@@ -606,7 +679,7 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     #print()
                     print(prod[i].rt_balise)
                     print("-"*120)
-
+                        '''
 
 
 
