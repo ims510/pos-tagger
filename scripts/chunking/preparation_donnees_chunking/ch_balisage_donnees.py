@@ -14,6 +14,7 @@ from ch_enrichir_donnees import ouvrir_csv, csv_to_lines, combiner_lignes, enric
 from typing import Dict, List
 from ch_datastructure import Diff, Production
 from ch_outils_balisage import corriger_chaine, corriger_chaine_avec_balises, detecter_rb, difference_between, get_position_char_unique
+from tqdm import tqdm
 
 
 
@@ -31,7 +32,7 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
         le même dictionnaire avec chaque running text balisé
     """
 
-    for personne, prod in productions_par_personne.items() :
+    for personne, prod in tqdm(productions_par_personne.items(), desc="Balisage des erreurs") :
 
         # Pour chaque production de chaque personne :
         for i in range(0, len(prod)) :
@@ -458,57 +459,75 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     # On regarde si les suppressions de la production affectent le running text
                     nb_char_avant_suppr, nb_suppr = detecter_rb(prod[i].charBurst)
 
-                    '''# On regarde si la production a bien été ajouté à la suite du running text
-                    if prod[i].startPos == prod[i-1].docLength :
-                        est_derniere_partie = True
-                    else :
-                        est_derniere_partie = False'''
-
-                    '''# Si les suppressions n'affectent pas le running text :
-                    if nb_char_avant_suppr >= nb_suppr :
-
-                        # On balise le charburst avec les suppressions internes
-                        charburst_balise = corriger_chaine_avec_balises(prod[i].charBurst)
-
-                        # On insère le charburst balisé à la position de départ dans le running text
-                        rt_avant_revision = prod[i-1].rt[0:prod[i].startPos]
-                        rt_apres_revision = prod[i-1].rt[prod[i].startPos::]
-                        rt_balise = rt_avant_revision + charburst_balise + rt_apres_revision
-
-                    # Sinon (si les modifications affectent le running text) :
-                    else :
-
-                        # On insère le charburst
-                        rt_avant_revision = prod[i-1].rt[0:prod[i].startPos]
-                        rt_apres_revision = prod[i-1].rt[prod[i].startPos::]
-                        rt_balise = rt_avant_revision + prod[i].charBurst + rt_apres_revision
-                        rt_balise = corriger_chaine_avec_balises(rt_balise)'''
-
-                    # Si les suppressions n'affectent pas le running text :
-                    #if nb_char_avant_suppr >= nb_suppr :
-
-                    '''# On balise le charburst avec les suppressions internes
-                    charburst_balise = corriger_chaine_avec_balises(prod[i].charBurst)
-
-                    # On insère le charburst balisé à la position de départ dans le running text
+                    # On identifie la partie du running text située avant et après la modification
                     rt_avant_revision = prod[i-1].rt[0:prod[i].startPos]
                     rt_apres_revision = prod[i-1].rt[prod[i].startPos::]
-                    rt_balise = rt_avant_revision + charburst_balise + rt_apres_revision'''
+
+                    # Si la production est bien ajoutée à la suite du running text :
+                    if prod[i].rt.strip().endswith(prod[i].burst.strip()) == True :
+
+                        # On insère le charburst de la production entre les parties du running text avant et après la modification
+                        rt_normal = rt_avant_revision + prod[i].charBurst + rt_apres_revision
+
+                        # On effectue le balisage des suppressions internes
+                        rt_balise_normal = corriger_chaine_avec_balises(rt_normal)
+
+                        # On remplace les espaces "␣" par des espaces simples
+                        rt_balise_normal_espaces = rt_balise_normal.replace("␣", " ")
+
+                        # On incrémente le running text balisé
+                        prod[i].rt_balise = rt_balise_normal_espaces
+
+                    # Sinon (si la production n'est pas ajoutée à la suite du running text) :
+                    else :
+
+                        # Si les suppressions de la production n'affectent pas le running text :
+                        if nb_char_avant_suppr >= nb_suppr :
+
+                            # On insère le charburst de la production entre les parties du running text avant et après la modification entre balises <CI> pour "Chaîne insérée"
+                            rt_ci_suite = rt_avant_revision + "<CI>" + prod[i].charBurst + "</CI>" + rt_apres_revision
+
+                            # On effectue le balisage des suppressions internes
+                            rt_balise_ci_suite = corriger_chaine_avec_balises(rt_ci_suite)
+
+                            # On remplace les espaces "␣" par des espaces simples
+                            rt_balise_ci_espaces_suite = rt_balise_ci_suite.replace("␣", " ")
+
+                            # On incrémente le running text balisé
+                            prod[i].rt_balise = rt_balise_ci_espaces_suite
+
+                        # Sinon (si les suppressions de la production affectent le running text) :
+                        else :
+
+                            # On insère le charburst de la production entre les parties du running text avant et après la modification
+                            rt_ci_milieu = rt_avant_revision + prod[i].charBurst + rt_apres_revision
+
+                            # On effectue le balisage des suppressions internes
+                            rt_balise_ci_milieu = corriger_chaine_avec_balises(rt_ci_milieu)
+
+                            # On remplace les espaces "␣" par des espaces simples
+                            rt_balise_ci_espaces_milieu = rt_balise_ci_milieu.replace("␣", " ")
+
+                            # On identifie la partie du running text avant la modification QUI N'A PAS ETE AFFECTEE PAR LES SUPPRESSIONS !
+                            rt_avant = rt_avant_revision[0:len(rt_avant_revision)+(nb_char_avant_suppr-nb_suppr)]
+
+                            # On trouve l'indice de début de la partie du running text qui suit la modification
+                            #test_pendant = rt_balise_ci_espaces_milieu[len(rt_avant_revision)+(nb_char_avant_suppr-nb_suppr)::].replace(rt_apres_revision, "")
+                            index = rt_balise_ci_espaces_milieu[len(rt_avant_revision)+(nb_char_avant_suppr-nb_suppr)::].find(rt_apres_revision)
+
+                            # On s'en sert pour reconstituer la modification balisée
+                            rt_pendant = rt_balise_ci_espaces_milieu[len(rt_avant_revision)+(nb_char_avant_suppr-nb_suppr)::][:index] + rt_balise_ci_espaces_milieu[len(rt_avant_revision)+(nb_char_avant_suppr-nb_suppr)::][index + len(rt_apres_revision):]
+
+                            # On identifie la partie du running text après la modification
+                            rt_apres = rt_apres_revision
+
+                            # On insère la modification balisée entre balises <CI> pour "Chaîne insérée" entre les parties du running text avant et après la modification
+                            rt_balise_ci_espaces_milieu_final = rt_avant + "<CI>" + rt_pendant + "</CI>" + rt_apres
+
+                            # On incrémente le running text balisé
+                            prod[i].rt_balise = rt_balise_ci_espaces_milieu_final
 
 
-                    # On insère le charburst à la position de départ du curseur dans le running text
-                    rt_avant_revision = prod[i-1].rt[0:prod[i].startPos]
-                    rt_apres_revision = prod[i-1].rt[prod[i].startPos::]
-                    rt_balise = rt_avant_revision + prod[i].charBurst + rt_apres_revision
-
-                    # On balise les suppressions internes
-                    rt_balise = corriger_chaine_avec_balises(rt_balise)
-
-                    # On remplace les espaces "␣" par des espaces simples
-                    rt_balise = rt_balise.replace("␣", " ")
-
-                    # On incrémente le running text balisé avec le balisage
-                    prod[i].rt_balise = rt_balise
 
 
                 if prod[i].ID == "P+S1" and prod[i].cat_error == "Suppression de caractères à l'intérieur d'un mot" :
