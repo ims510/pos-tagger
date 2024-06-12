@@ -154,6 +154,49 @@ class Diff:
     difference: str
     
     
+
+@dataclass
+class Annotation:
+    """Classe représentant une annotation à chaque nouveau burst."""
     
+    ID: str
+    charge: str
+    outil: str
+    n_burst: int
+    debut_burst: float
+    duree_burst: float
+    duree_pause: float
+    duree_cycle: float
+    pct_burst: float
+    pct_pause: float
+    longueur_burst: int
+    burst: str
+    startPos	: str
+    endPos: str
+    docLength: int
+    categ: str
+    charBurst: str
+    ratio: float
+    
+    erreur: str
+    cat_error: str
+    token_erronne: str
+    lemme: str
+    pos_suppose: str
+    pos_reel: str
+    longueur: int
+    contexte: str
+    correction: str
+    
+    nb_char: int
+    nb_words: int
+    type_operation: str
+    nb_deletion: int
+    abs_position: str
+    rel_position: tuple
+    scope: str
+    
+    rt: str
+    rt_balise: str
     
     

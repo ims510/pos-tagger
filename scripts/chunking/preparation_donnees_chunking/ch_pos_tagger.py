@@ -2,8 +2,8 @@
 
 
 
-from identify_errors import ouverture_csv
-from datastructure import Ligne, Token
+from ch_identify_errors import ouverture_csv
+from ch_datastructure import Ligne, Token
 from typing import List, Dict, Tuple
 import csv
 from tqdm import tqdm

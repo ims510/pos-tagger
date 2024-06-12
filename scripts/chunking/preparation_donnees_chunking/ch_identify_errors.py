@@ -1,7 +1,7 @@
-from datastructure import Ligne, Token, Difference
+from ch_datastructure import Ligne, Token, Difference
 import csv
 from typing import List
-from creation_lexique import obtenir_lexique, get_filenames
+from ch_creation_lexique import obtenir_lexique, get_filenames
 
 
 

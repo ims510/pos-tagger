@@ -640,9 +640,9 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
 
 
-                if prod[i].cat_error == "Mot inséré entre deux mots" :
+                #if prod[i].cat_error == "Mot inséré entre deux mots" :
 
-                #if prod[i].ID == "P+S1" and prod[i].cat_error == "0" :
+                if prod[i].ID == "P+S1" :
 
                 #if prod[i].cat_error == "Lettre unique ajoutée" :
 
@@ -650,7 +650,7 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     #print(f"{prod[i].ID}\t{prod[i].n_burst}\t{prod[i].burst}\t{prod[i].charBurst}\t{prod[i].rt_balise}")
 
 
-                    print(prod[i].n_burst)
+                    '''print(prod[i].n_burst)
                     print()
                     print(prod[i].charBurst)
                     print()
@@ -660,7 +660,7 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     print()
                     print(prod[i].burst)
                     print("***")
-                    print()
+                    print()'''
                     print(prod[i].rt_balise)
                     print("-"*120)
 
