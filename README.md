@@ -4,10 +4,27 @@
 
 Ce dépôt contient les scripts ayant servi au projet ANR pro text d'analyse automatique de données d'écriture en temps réel.
 
-Vous trouverez
+Vous trouverez 2 dossier principaux, correspondant à 2 tâches principales :
+
+1. pos_tagging
+2. chunking
+
+## Pos_tagging
+
+Dans ce fichier, vous trouverez plusieurs scripts ayant pour but d'identifier les erreurs et de les annoter en parties du discours. Cela permet d'obtenir un fichier csv contenant une liste des productions contenant des erreurs.
+
+Commande pour lancer l'outil :
+```sh
+python3 pos_tagger.py -i chemin/vers/le/fichier_csv_contenant_les_donnees -o chemin/vers/le/fichier_csv_de_resultats
+```
+
+Exemple de lancement :
+```sh
+python3 pos_tagger.py -i ../data/CLEAN_csv_planification.tsv -o ../data/annotation_erreurs_treetagger.csv
+```
 
 
-
+## Chunking
 
 
 
