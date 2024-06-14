@@ -15,6 +15,7 @@ from typing import Dict, List
 from ch_datastructure import Production, Annotation
 from ch_outils_balisage import corriger_chaine_avec_balises, detecter_rb, get_position_char_unique, remplacer_balise_si, get_nb_char, process_deletions, extraire_sequence
 from tqdm import tqdm
+import argparse
 import re
 import os
 
@@ -33,16 +34,16 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
         le même dictionnaire avec chaque running text balisé
     """
     resultat = {}
-    
+
     for personne, prod in tqdm(productions_par_personne.items(), desc="Balisage des erreurs") :
-        
+
         annotations = []
 
         # Pour chaque production de chaque personne :
         for i in range(0, len(prod)) :
 
             if prod[i].charBurst != "Err :501" :
-                
+
                 # Si la production n'a pas d'erreur :
                 if prod[i].cat_error == "0" :
 
@@ -84,28 +85,28 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
                         # On incrémente le running text balisé
                         prod[i].rt_balise = rt_balise_normal_espaces_attributs
-                        
+
                         # On compte le nombre de suppressions successives
                         char = get_nb_char(prod[i].charBurst)
-                        
-                        an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                        erreur = "True", cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                        nb_char = char, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = "preceding", 
+
+                        an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                        erreur = "True", cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                        nb_char = char, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = "preceding",
                         rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                        
+
                         annotations.append(an)
-                        
+
                     # Sinon (si son charBurst ne commence par ⌫) :
                     else :
 
                         # Le running text balisé est égal au running text
                         prod[i].rt_balise = prod[i].rt
-                        
-                        an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                        erreur = prod[i].erreur, cat_error = "0", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                        nb_char = None, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = None, 
+
+                        an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                        erreur = prod[i].erreur, cat_error = "0", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                        nb_char = None, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = None,
                         rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                        
+
                         annotations.append(an)
 
 
@@ -134,14 +135,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             suppr = 0
                             rt_balise = rt_balise.replace("<AS>", f"<AS char={char} words={mots} operation='{operation}' deletion={suppr}>")
                             prod[i].rt_balise = rt_balise
-                            
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = prod[i].erreur, cat_error = "AS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = prod[i].erreur, cat_error = "AS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
+
                             annotations.append(an)
-                            
+
 
                         # S'il s'agit d'une lettre :
                         elif prod[i].burst.isalpha() :
@@ -164,14 +165,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             relative_position = get_position_char_unique(rt_balise, 'AL')[1]
                             rt_balise = rt_balise.replace("<AL>", f"<AL char={char} words={mots} operation='{operation}' deletion={suppr} abs_position='{absolute_position}' rel_position='{relative_position}'>")
                             prod[i].rt_balise = rt_balise
-                            
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = prod[i].erreur, cat_error = "AL", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = absolute_position, rel_position = relative_position, scope = None, 
+
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = prod[i].erreur, cat_error = "AL", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = absolute_position, rel_position = relative_position, scope = None,
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
+
                             annotations.append(an)
-                            
+
 
 
                         # Sinon (s'il s'agit d'une ponctuation) :
@@ -193,14 +194,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             suppr = 0
                             rt_balise = rt_balise.replace("<AP>", f"<AP char={char} words={mots} operation='{operation}' deletion={suppr}>")
                             prod[i].rt_balise = rt_balise
-                            
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = prod[i].erreur, cat_error = "AP", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = prod[i].erreur, cat_error = "AP", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
+
                             annotations.append(an)
-                            
+
 
                     # Si le charburst contient plusieurs caractères :
                     else :
@@ -239,14 +240,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                                     suppr = n
                                     rt_balise = rt_balise.replace("<AS>", f"<AS char={char} words={mots} operation='{operation}' deletion={suppr}>")
                                     prod[i].rt_balise = rt_balise
-                                    
-                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                                    erreur = prod[i].erreur, cat_error = "AS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                                    erreur = prod[i].erreur, cat_error = "AS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                                    
+
                                     annotations.append(an)
-                                    
+
 
                                 # Sinon (s'il y a plusieurs backspaces) :
                                 else :
@@ -267,12 +268,12 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                                     suppr = n
                                     rt_balise = rt_balise.replace("<AS>", f"<AS char={char} words={mots} operation='{operation}' deletion={suppr}>")
                                     prod[i].rt_balise = rt_balise
-                                    
-                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                                    erreur = prod[i].erreur, cat_error = "AS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                                    erreur = prod[i].erreur, cat_error = "AS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                                    
+
                                     annotations.append(an)
 
 
@@ -300,14 +301,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                                     relative_position = get_position_char_unique(rt_balise, 'AL')[1]
                                     rt_balise = rt_balise.replace("<AL>", f"<AL char={char} words={mots} operation='{operation}' deletion={suppr} abs_position='{absolute_position}' rel_position='{relative_position}'>")
                                     prod[i].rt_balise = rt_balise
-                                    
-                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                                    erreur = prod[i].erreur, cat_error = "AL", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = absolute_position, rel_position = relative_position, scope = None, 
+
+                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                                    erreur = prod[i].erreur, cat_error = "AL", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = absolute_position, rel_position = relative_position, scope = None,
                                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                                    
+
                                     annotations.append(an)
-                                    
+
 
                                 # Sinon (s'il y a plusieurs backspaces) :
                                 else :
@@ -330,14 +331,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                                     relative_position = get_position_char_unique(rt_balise, 'AL')[1]
                                     rt_balise = rt_balise.replace("<AL>", f"<AL char={char} words={mots} operation='{operation}' deletion={suppr} abs_position='{absolute_position}' rel_position='{relative_position}'>")
                                     prod[i].rt_balise = rt_balise
-                                    
-                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                                    erreur = prod[i].erreur, cat_error = "AL", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = absolute_position, rel_position = relative_position, scope = None, 
+
+                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                                    erreur = prod[i].erreur, cat_error = "AL", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = absolute_position, rel_position = relative_position, scope = None,
                                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                                    
+
                                     annotations.append(an)
-                                    
+
 
 
                             # Sinon (si le caractère ajouté est une ponctuation) :
@@ -362,14 +363,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                                     suppr = n
                                     rt_balise = rt_balise.replace("<AP>", f"<AP char={char} words={mots} operation='{operation}' deletion={suppr}>")
                                     prod[i].rt_balise = rt_balise
-                                    
-                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                                    erreur = prod[i].erreur, cat_error = "AP", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                                    erreur = prod[i].erreur, cat_error = "AP", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                                    
+
                                     annotations.append(an)
-                                    
+
 
                                 # Sinon (s'il y a plusieurs backspaces) :
                                 else :
@@ -390,14 +391,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                                     suppr = n
                                     rt_balise = rt_balise.replace("<AP>", f"<AP char={char} words={mots} operation='{operation}' deletion={suppr}>")
                                     prod[i].rt_balise = rt_balise
-                                    
-                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                                    erreur = prod[i].erreur, cat_error = "AP", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                                    erreur = prod[i].erreur, cat_error = "AP", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                                    
+
                                     annotations.append(an)
-                                    
+
 
 
                 # Si la production a pour erreur "Mot inséré entre deux mots" :
@@ -433,14 +434,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     suppr = nb_suppr
                     rt_balise = rt_balise.replace("<IW>", f"<IW char={char} words={mots} operation='{operation}' deletion={suppr}>")
                     prod[i].rt_balise = rt_balise
-                    
-                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                    erreur = prod[i].erreur, cat_error = "IW", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                    erreur = prod[i].erreur, cat_error = "IW", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                    
+
                     annotations.append(an)
-                    
+
 
 
                 # Si la production a pour erreur "Partie d'une chaîne insérée entre deux mots" :
@@ -482,23 +483,23 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                         operation = op
                         suppr = nb_suppr
                         rt_balise = rt_balise.replace(f"<IS>{prod[i].burst}</IS>", f"<IS char={char} words={mots} operation='{op}' deletion={suppr}>{prod[i].burst}</IS>")
-                        
-                        if rt_balise.strip().endswith("</IS>") : 
+
+                        if rt_balise.strip().endswith("</IS>") :
                             prod[i].rt_balise = prod[i].rt
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = "False", cat_error = "0", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = None, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = None, 
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = "False", cat_error = "0", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = None, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = None,
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
-                        else : 
+
+                        else :
                             prod[i].rt_balise = rt_balise
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = prod[i].erreur, cat_error = "IS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = prod[i].erreur, cat_error = "IS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
+
                         annotations.append(an)
-                        
+
 
                     # Sinon (si le charburst ne commence pas par un backspace) :
                     else :
@@ -528,14 +529,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                         suppr = nb_suppr
                         rt_balise = rt_balise.replace(f"<IS>{prod[i].burst}</IS>", f"<IS char={char} words={mots} operation='{op}' deletion={suppr}>{prod[i].burst}</IS>")
                         prod[i].rt_balise = rt_balise
-                        
-                        an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                        erreur = prod[i].erreur, cat_error = "IS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                        nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                        an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                        erreur = prod[i].erreur, cat_error = "IS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                        nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                         rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                        
+
                         annotations.append(an)
-                        
+
 
 
                 # Si la production a pour erreur "Backspaces supprimant une chaîne" :
@@ -562,14 +563,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     suppr = n
                     rt_balise = rt_balise.replace("<BD>", f"<BD char={char} words={mots} operation='{operation}' deletion={suppr}>")
                     prod[i].rt_balise = rt_balise
-                    
-                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                    erreur = prod[i].erreur, cat_error = "BD", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                    erreur = prod[i].erreur, cat_error = "BD", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                    
+
                     annotations.append(an)
-                    
+
 
 
                 # Si la production a pour erreur "Deletes supprimant une chaîne" :
@@ -596,14 +597,14 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                     suppr = n
                     rt_balise = rt_balise.replace("<DD>", f"<DD char={char} words={mots} operation='{operation}' deletion={suppr}>")
                     prod[i].rt_balise = rt_balise
-                    
-                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                    erreur = prod[i].erreur, cat_error = "DD", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
+
+                    an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                    erreur = prod[i].erreur, cat_error = "DD", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                    nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None,
                     rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                    
+
                     annotations.append(an)
-                    
+
 
                 # Si la production a pour erreur "Suppression de caractères à l'intérieur d'un mot" :
                 elif prod[i].cat_error == "Suppression de caractères à l'intérieur d'un mot" :
@@ -638,15 +639,15 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
                             # On incrémente le running text balisé
                             prod[i].rt_balise = rt_balise_normal_espaces_attributs
-                            
+
                             # On compte le nombre de suppressions successives
                             char = get_nb_char(prod[i].charBurst)
-                            
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = prod[i].erreur, cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = char, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = 'local', 
+
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = prod[i].erreur, cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = char, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = 'local',
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
+
                             annotations.append(an)
 
                         # Sinon (si les suppressions de la production affectent le running text) :
@@ -675,15 +676,15 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
                             # On incrémente le running text balisé
                             prod[i].rt_balise = rt_balise_normal_espaces_attributs
-                            
+
                             # On compte le nombre de suppressions successives
                             char = get_nb_char(prod[i].charBurst)
-                            
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = prod[i].erreur, cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = char, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = 'preceding', 
+
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = prod[i].erreur, cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = char, nb_words = None, type_operation = None, nb_deletion = None, abs_position = None, rel_position = None, scope = 'preceding',
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
+
                             annotations.append(an)
 
 
@@ -715,12 +716,12 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             suppr = 0
                             rt_balise_ci_espaces_suite_attributs_ci = rt_balise_ci_espaces_suite_attributs.replace("<IS>", f"<IS char={char} words={mots} operation='{op}' deletion={suppr}>")
                             prod[i].rt_balise = rt_balise_ci_espaces_suite_attributs_ci
-                            
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = prod[i].erreur, cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = 'local', 
+
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = prod[i].erreur, cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = 'local',
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
+
                             annotations.append(an)
 
                         # Sinon (si les suppressions de la production affectent le running text) :
@@ -776,32 +777,32 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             suppr = nb_suppr-nb_char_avant_suppr
                             rt_balise_ci_espaces_milieu_final_attributs_ci = rt_balise_ci_espaces_milieu_final_attributs.replace("<IS>", f"<IS char={char} words={mots} operation='{op}' deletion={suppr}>")
                             prod[i].rt_balise = rt_balise_ci_espaces_milieu_final_attributs_ci
-                            
-                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                            erreur = prod[i].erreur, cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = 'preceding', 
+
+                            an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio,
+                            erreur = prod[i].erreur, cat_error = "ID", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction,
+                            nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = 'preceding',
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
-                            
+
                             annotations.append(an)
 
                 else :
-                    
+
                     print(f"Non-traité : {prod[i].n_burst}")
-                
-                
+
+
         # Supprimer les doublons éventuels
         annotations_sans_doublons = []
-        for annotation in annotations : 
-            if annotation not in annotations_sans_doublons : 
+        for annotation in annotations :
+            if annotation not in annotations_sans_doublons :
                 annotations_sans_doublons.append(annotation)
 
         resultat[personne] = annotations_sans_doublons
 
     return resultat
-        
 
 
-def reconstruire_textes(dico: Dict) -> Dict : 
+
+def reconstruire_textes(dico: Dict) -> Dict :
     """Reconstruit les textes de chaque personne avec les erreurs annotées
 
     Parameters
@@ -814,69 +815,69 @@ def reconstruire_textes(dico: Dict) -> Dict :
     Dict
         dictionnaire où la clé est la personne et la valeur le texte reconstruit avec les erreurs annotées
     """
-    
+
     # Initialiser un dictionnaire pour stocker les textes reconstruits
     textes_reconstruits = {}
-    
-    # Pour chaque personne : 
-    for personne, prod in tqdm(dico.items(), desc="Reconstruction des textes annotés") : 
+
+    # Pour chaque personne :
+    for personne, prod in tqdm(dico.items(), desc="Reconstruction des textes annotés") :
 
         # Pour chaque production
         for i in range(0, len(prod)) :
-            
-            # Si la production ne contient pas d'erreur liée aux données d'origine : 
+
+            # Si la production ne contient pas d'erreur liée aux données d'origine :
             if prod[i].charBurst != "Err :501" :
-                
+
                 # Initialiser le docLenght à la longueur du running text de la production afin d'éviter les erreurs liées aux données
                 prod[i].docLength = len(prod[i].rt)
 
                 # Traiter les 2 premières productions en les concaténant avec des pipes
-                if prod[i].n_burst == 1 or prod[i].n_burst == 2 : 
+                if prod[i].n_burst == 1 or prod[i].n_burst == 2 :
                     modif = prod[i].burst
                     prod[i].rt_balise = prod[i].rt_balise.replace(modif, f"|{modif}|")
 
-                # Pour les autres productions : 
-                else : 
-                    
+                # Pour les autres productions :
+                else :
+
                     # Corriger la catégorie de production
-                    if prod[i].startPos == prod[i-1].docLength : 
+                    if prod[i].startPos == prod[i-1].docLength :
                         prod[i].categ == "P"
-                    elif prod[i-1].startPos <= prod[i].startPos <= prod[i-1].endPos : 
+                    elif prod[i-1].startPos <= prod[i].startPos <= prod[i-1].endPos :
                         prod[i].categ == "R"
-                    else : 
+                    else :
                         prod[i].categ == "RB"
-                    
+
                     # Corriger la position de départ lorsqu'elle est plus élevée que la longueur du texte de la production précédente
-                    if prod[i].startPos > prod[i-1].docLength : 
+                    if prod[i].startPos > prod[i-1].docLength :
                         prod[i].startPos = prod[i-1].docLength
 
                     # Identifier la modification à ajouter ainsi que la partie précédente
                     chaine_avant = prod[i-1].rt[0:prod[i].startPos]
                     modif = prod[i].charBurst.replace("␣", " ")
-                    
+
                     # Aligner les parties précédant et suivant la modification avec les caractères spéciaux
                     chaine_avant_ajustee, chaine_apres_ajustee = extraire_sequence(prod[i-1].rt_balise, chaine_avant)
 
                     # Gérer les cas où la modification intervient à l'intérieur de parties de textes ajoutées a posteriori
-                    if chaine_apres_ajustee.startswith(">") : 
+                    if chaine_apres_ajustee.startswith(">") :
                         chaine_avant_ajustee = chaine_avant_ajustee + ">"
                         chaine_apres_ajustee = chaine_apres_ajustee[1:]
-                    if chaine_apres_ajustee.startswith("}") : 
+                    if chaine_apres_ajustee.startswith("}") :
                         chaine_avant_ajustee = chaine_avant_ajustee + "}"
                         chaine_apres_ajustee = chaine_apres_ajustee[1:]
 
                     # Si la production est ajoutée à la suite du texte, la séparer du reste du texte par un pipe
-                    if prod[i].startPos == prod[i-1].docLength : 
+                    if prod[i].startPos == prod[i-1].docLength :
                         modif = "|" + modif
-                    # Sinon (si la production est insérée à l'intérieur du texte existant) : 
-                    else : 
+                    # Sinon (si la production est insérée à l'intérieur du texte existant) :
+                    else :
                         # Si la chaîne insérée est une lettre/espace/ponctuation ajoutée, l'annoter entre chevrons
-                        if len(prod[i].burst.strip()) == 1 or prod[i].charBurst == "␣" : 
+                        if len(prod[i].burst.strip()) == 1 or prod[i].charBurst == "␣" :
                             modif = "<" + modif + ">"
                         # Sinon (si la chaîne insérée est un mot ou une suite de mots), l'annoter entre accolades
-                        else : 
+                        else :
                             modif = "{" + modif + "}"
-                    
+
                     # Incrémenter le running text balisé de la production avec la modification
                     prod[i].rt_balise = chaine_avant_ajustee + modif + chaine_apres_ajustee
 
@@ -886,9 +887,9 @@ def reconstruire_textes(dico: Dict) -> Dict :
         # Effectuer les suppressions
         texte_avec_char_suppr = process_deletions(texte)
         textes_reconstruits[personne] = texte_avec_char_suppr
-        
+
     return textes_reconstruits
-    
+
 
 
 def enregistrer_dictionnaire(dictionnaire: Dict) -> None :
@@ -903,30 +904,37 @@ def enregistrer_dictionnaire(dictionnaire: Dict) -> None :
     -------
     None
     """
-    
+
     # Créer le dossier "Textes_reconstruits" s'il n'existe pas
     dossier = "Textes_reconstruits"
     if not os.path.exists(dossier) :
         os.makedirs(dossier)
-    
+
     # Pour chaque clé dans le dictionnaire, créer un fichier texte
     for cle, valeur in dictionnaire.items() :
         # Construire le chemin complet du fichier
         chemin_fichier = os.path.join(dossier, f"{cle}.txt")
-        
+
         # Écrire la valeur dans le fichier
         with open(chemin_fichier, 'w', encoding='utf-8') as fichier :
             fichier.write(str(valeur))
+    print('Les textes reconstruits ont bien été enregistrés dans le dossier "Textes_reconstruits"')
 
 
 
 def main() :
 
+    # Gérer les arguments
+    parser = argparse.ArgumentParser(description="Reconstruction des textes annotés avec les erreurs")
+    parser.add_argument("-d", "--data-file", type=str, default="CLEAN_csv_planification.tsv", help="Chemin du fichier tsv d'origine")
+    parser.add_argument("-e", "--errors-file", type=str, default="annotation_erreurs_treetagger.csv", help="Chemin du fichier tsv d'origine")
+    args = parser.parse_args()
+
     # Charger les lignes du csv planification
-    liste_lignes = ouvrir_csv('CLEAN_csv_planification.tsv')
+    liste_lignes = ouvrir_csv(args.data_file)
 
     # Charger les lignes erronnées
-    lignes_erronnees = csv_to_lines('annotation_erreurs_treetagger.csv')
+    lignes_erronnees = csv_to_lines(args.errors_file)
 
     # Obtenir une ligne par burst en combinant les erreurs au sein de la même ligne
     lignes_erronnees_combinees = combiner_lignes(lignes_erronnees)
@@ -945,14 +953,14 @@ def main() :
 
     # Baliser le texte de chaque personne en fonction des types d'erreurs
     annotation_erreurs = baliser_erreurs(prods_par_personne)
-    
+
     # Reconstruire les textes avec les erreurs
     dico_textes_avec_erreurs = reconstruire_textes(annotation_erreurs)
-    
+
     # Enregistrer les textes de chaque personne dans un fichier différent
     enregistrer_dictionnaire(dico_textes_avec_erreurs)
 
-    
+
 
 if __name__ == "__main__":
     main()
