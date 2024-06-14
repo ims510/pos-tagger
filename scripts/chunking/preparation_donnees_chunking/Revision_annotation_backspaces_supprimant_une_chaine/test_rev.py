@@ -91,8 +91,47 @@ def comparer_chaines(chaine1, chaine2):
     return ("Les chaînes sont identiques", chaine1, chaine2)
 
 
-print(comparer_chaines(chaine_sans_spe, chaine_avec_spe_nettoyee))
+#print(comparer_chaines(chaine_sans_spe, chaine_avec_spe_nettoyee))
 
+
+
+
+
+
+texte = "Dans le cadre de la médecine traditionnelle, |nous voici face à un dillemme. |Beaucoup critiqué cette dernière s'avère parfois ene⌫ effet fort efficace sur certaines<⌫⌫s> points, ⌫⌫. |En effet si l'ont y réfléchie plus longuement beaucoup de nos méthodes actuelles se sont basé sur les fond<s> de cette médi|⌫ecine alternative|,< >{⌫⌫ du aux croyance et autre connaissances antètieures, ⌫⌫ et même si elle est dépassé sur certains cas de maladie à l'heure actu}{elle} certaine⌫s remède<s> sont encà⌫ore utilisés |à nos jours|.< > |L'u⌫⌫⌫De plus nous pouvons com⌫⌫⌫souligner le fait que la médecine alternative |n'utilisepas⌫⌫⌫ pas que les croyances{ au final}|, |les remèdes naturelle⌫⌫s sont en effet| beaucoup⌫⌫⌫⌫⌫⌫⌫⌫⌫⌫t énom⌫rmément mis<⌫t> en avant contrairement à la médecine actuelle qui mêms⌫e"
+
+
+def process_deletions(text):
+    special_chars = {'|', '<', '>', '{', '}'}
+    result = list(text)
+    i = 0
+
+    while i < len(result):
+        if result[i] == '⌫':
+            # Si le caractère de suppression est trouvé, rechercher le caractère précédent
+            j = i - 1
+            while j >= 0 and result[j] == '~':
+                j -= 1
+            if j >= 0 and result[j] != '~':
+                if result[j] in special_chars and j > 0:
+                    # Si le caractère précédent est un caractère spécial, supprimer le caractère avant le spécial
+                    result.pop(j - 1)
+                    i -= 1  # Ajuster l'index après suppression
+                else:
+                    # Supprimer le caractère précédent s'il n'est pas un tilde ou un caractère spécial
+                    result.pop(j)
+                    i -= 1  # Ajuster l'index après suppression
+            # Remplacer le caractère de suppression par un tilde
+            result[i] = '~'
+        i += 1
+
+    # Joindre la liste en une chaîne de caractères
+    return ''.join(result)
+
+
+
+texte_nettoye = process_deletions(texte)
+print(texte_nettoye)
 
 
 

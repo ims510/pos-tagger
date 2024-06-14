@@ -538,7 +538,7 @@ def extraire_sequence(chaine_speciale, chaine_sans_speciale):
                 index_sans_speciale += 1
                 if index_sans_speciale == longueur_sans_speciale:
                     sequence_complete = True
-            elif char in "|~<>{}#":
+            elif char in "|~<>{}#⌫":
                 resultat.append(char)
                 # Si on ajoute un caractère spécial à resultat, on vérifie si la séquence est complète
                 if index_sans_speciale < longueur_sans_speciale and char == chaine_sans_speciale[index_sans_speciale]:
@@ -809,18 +809,18 @@ def calculate_insertion_position_v2(chaine_sans_speciaux, chaine_avec_speciaux, 
 
 def calculate_insertion_position(chaine_sans_speciaux, chaine_avec_speciaux, position_insertion_sans_speciaux, chaine_a_inserer, balise, longueur_ajout, fin_insertion):
     
-    print("chaine_avec_speciaux : ")
+    '''print("chaine_avec_speciaux : ")
     print(chaine_avec_speciaux)
     print()
     print("chaine_sans_speciaux[0:position_insertion_sans_speciaux] : ")
-    print(chaine_sans_speciaux[0:position_insertion_sans_speciaux])
+    print(chaine_sans_speciaux[0:position_insertion_sans_speciaux])'''
     chaine_avant_ajustee, chaine_apres_ajustee = extraire_sequence(chaine_avec_speciaux, chaine_sans_speciaux[0:position_insertion_sans_speciaux])
 
-    print()
+    '''print()
     print("chaine_avant_ajustee : ")
     print(chaine_avant_ajustee)
     print("chaine_apres_ajustee : ")
-    print(chaine_apres_ajustee)
+    print(chaine_apres_ajustee)'''
     
     
     '''if chaine_apres_ajustee.startswith("<") : 
@@ -843,8 +843,8 @@ def calculate_insertion_position(chaine_sans_speciaux, chaine_avec_speciaux, pos
 
     
     chaine_apres_ajustee = supprimer_caracteres(chaine_apres_ajustee, nb_suppr)
-    print("ICI : ")
-    print(chaine_apres_ajustee)
+    '''print("ICI : ")
+    print(chaine_apres_ajustee)'''
     
     if chaine_apres_ajustee.startswith("}") : 
         chaine_a_inserer = "}" + chaine_a_inserer
@@ -853,11 +853,11 @@ def calculate_insertion_position(chaine_sans_speciaux, chaine_avec_speciaux, pos
     
     
     
-    print("chaine_a_inserer : ")
+    '''print("chaine_a_inserer : ")
     print(chaine_a_inserer)
     
     print("chaine_apres_ajustee apres traitement : ")
-    print(chaine_apres_ajustee)
+    print(chaine_apres_ajustee)'''
     
     if balise != "BD" : 
         
@@ -907,7 +907,7 @@ def calculate_insertion_position(chaine_sans_speciaux, chaine_avec_speciaux, pos
 
 
 
-def process_deletions(text):
+def process_deletions_v0(text):
     result = list(text)
     i = 0
 
@@ -927,3 +927,36 @@ def process_deletions(text):
 
     # Joindre la liste en une chaîne de caractères
     return ''.join(result)
+
+
+
+
+def process_deletions(text):
+    special_chars = {'|', '<', '>', '{', '}'}
+    result = list(text)
+    i = 0
+
+    while i < len(result):
+        if result[i] == '⌫':
+            # Si le caractère de suppression est trouvé, rechercher le caractère précédent
+            j = i - 1
+            while j >= 0 and result[j] == '~':
+                j -= 1
+            if j >= 0 and result[j] != '~':
+                if result[j] in special_chars and j > 0:
+                    # Si le caractère précédent est un caractère spécial, supprimer le caractère avant le spécial
+                    result.pop(j - 1)
+                    i -= 1  # Ajuster l'index après suppression
+                else:
+                    # Supprimer le caractère précédent s'il n'est pas un tilde ou un caractère spécial
+                    result.pop(j)
+                    i -= 1  # Ajuster l'index après suppression
+            # Remplacer le caractère de suppression par un tilde
+            result[i] = '~'
+        i += 1
+
+    # Joindre la liste en une chaîne de caractères
+    return ''.join(result)
+
+
+

@@ -13,7 +13,7 @@ Created on Sat Jun  1 10:02:35 2024
 from ch_enrichir_donnees import ouvrir_csv, csv_to_lines, combiner_lignes, enrichir_productions, get_persons, trier_nburst, recuperer_productions
 from typing import Dict, List
 from ch_datastructure import Diff, Production, Annotation
-from ch_outils_balisage_rev import corriger_chaine, corriger_chaine_avec_balises, detecter_rb, difference_between, get_position_char_unique, remplacer_balise_si, get_nb_char, find_difference, extract_tags, extract_deletion,extract_char,  extract_content, calculate_insertion_position, process_deletions, supprimer_caracteres
+from ch_outils_balisage_rev import corriger_chaine, corriger_chaine_avec_balises, detecter_rb, difference_between, get_position_char_unique, remplacer_balise_si, get_nb_char, find_difference, extract_tags, extract_deletion,extract_char,  extract_content, calculate_insertion_position, process_deletions, supprimer_caracteres, extraire_sequence
 from tqdm import tqdm
 import re
 import csv
@@ -850,320 +850,87 @@ def main() :
     
     
     
+    textes_reconstruits = {}
+    
     # Reconstruire le texte avec les annotations des pauses et des erreurs
     for personne, prod in tqdm(annotation_erreurs.items(), desc="Reconstruction du texte annoté") : 
-        
+
         for i in range(0, len(prod)) :
                             
             if prod[i].charBurst != "Err :501" :
+                
+                prod[i].docLength = len(prod[i].rt)
 
-                #try : 
-                    
-                    mod = find_difference(prod[i-1].rt, prod[i].rt_balise)[0]
-                    
+                if prod[i].n_burst == 1 or prod[i].n_burst == 2 : 
+                    modif = prod[i].burst
+                    prod[i].rt_balise = prod[i].rt_balise.replace(modif, f"|{modif}|")
 
-                    
-                    if prod[i].startPos != prod[i-1].docLength and len(prod[i].burst.strip()) == 1 and prod[i].burst.strip().isalpha() and prod[i].cat_error == "0" : #and prod[i].categ != "P" : 
-                        mod = "<AL char=1 words=1 operation='addition' deletion=0>" + prod[i].burst + "</AL>"
-                        prod[i].cat_error = "Lettre unique ajoutée"
-                        print("Lettre unique ajoutée non détectée : ")
-                        print(prod[i].burst)
-                    
-                    
-                    
-########################################################################################################################################################################
-
-                    
-                    if prod[i-1].docLength - prod[i].startPos == 1 and prod[i].rt[-1].isalpha() == False and prod[i].categ =="P" and prod[i].cat_error != "Lettre unique ajoutée" : 
-                        print("Trouvé !")
-                        fausse_prod = True
-                        
-                        
-                                                    
-                            
-                        modif = prod[i].burst
-                        
-                        rt_avant = prod[i-1].rt_balise[0:prod[i].startPos]
-                        print("rt_avant : ")
-                        print(rt_avant)
-                        
-                        prod[i].rt_balise = prod[i-1].rt_balise[0:prod[i].startPos] + modif
-                                                    
-
-########################################################################################################################################################################
-                    
-                    
-                    
-                    
-                    if prod[i].categ == "R" and prod[i].endPos - prod[i].startPos == 1 and prod[i].rt[prod[i].startPos:prod[i].endPos] == " " : 
-                        mod = "<AS char=1 words=1 operation='addition' deletion=0>" + prod[i].rt[prod[i].startPos:prod[i].endPos].replace(" ", "␣") + "</AS>"
-                        prod[i].cat_error = "Espace ajouté"
-                    
-                    if prod[i].categ == "R" and prod[i].endPos - prod[i].startPos != 1 and len(prod[i].burst.split()) > 1 : 
-                        mod = "<IS>" + prod[i].charBurst + "</IS>"
-                        prod[i].cat_error = "Partie d'une chaîne insérée entre deux mots"
-                    
-                    #if prod[i].categ == "R" and prod[i].endPos - prod[i].startPos != 1 and len(prod[i].burst.split()) == 1 and prod[i].cat_error != "Lettre unique ajoutée" and prod[i].cat_error != "Espace ajouté" and prod[i].cat_error != "Ponctuation ajoutée" : 
-                    if prod[i].categ == "R" and prod[i].endPos - prod[i].startPos != 1 and len(prod[i].burst) != 1 : 
-                        mod = "<IS>" + prod[i].charBurst + "</IS>"
-                        prod[i].cat_error = "Partie d'une chaîne insérée entre deux mots"
-                    
-                    if prod[i].n_burst != 2 and prod[i].n_burst != 1 : 
-
-                    
-                        if mod == None or prod[i].cat_error == "0" : 
-                            modif = prod[i].burst
-                            prod[i].rt_balise = prod[i-1].rt_balise + "|" + modif
-
-                        
-                        elif mod.__contains__("</AL>") : 
-                            
-                            try : 
-                                modif = extract_tags(find_difference(prod[i-1].rt, prod[i].rt_balise)[0], "AL")
-                            except IndexError : 
-                                modif = prod[i].charBurst.replace("⌫", "~")
-                            try : 
-                                position_modif = find_difference(prod[i-1].rt, prod[i].rt_balise)[1]
-                            except IndexError : 
-                                position_modif = prod[i].startPos
-                            try : 
-                                nb_deletions = "~"*extract_deletion(modif[0])
-                            except IndexError : 
-                                nb_deletions = "~"*modif.count("~")
-                            try : 
-                                content = extract_content(modif[0])
-                            except IndexError : 
-                                content = prod[i].burst
-                            try : 
-                                modif = modif[0].replace(modif[0], f"<{nb_deletions}{content}>")
-                            except IndexError : 
-                                modif = f"<{nb_deletions}{content}>"
-                            
-                                
-      
-                            
-                            '''position_modif = prod[i].startPos
-                            nb_char_avant_suppr, nb_suppr = detecter_rb(prod[i].charBurst)
-                            n = nb_suppr - nb_char_avant_suppr
-                            nb_deletions = "~"*n
-                            prod[i-1].rt_balise = prod[i-1].rt_balise[0:len(prod[i-1].rt_balise)-n]
-                            modif = "<" + process_deletions(prod[i].charBurst).replace("␣", " ") + ">"'''
-                            
-
-                            
-                            #prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "AL", len(content))
-                            #prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "AL", len(nb_deletions))
-                            prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "AL", len(nb_deletions), prod[i].endPos)
-
-                            
-                        elif mod.__contains__("</AS>") : 
-                            #modif = extract_tags(find_difference(prod[i-1].rt, prod[i].rt_balise)[0], "AS")
-                            modif = extract_tags(mod, "AS")
-                            #position_modif = find_difference(prod[i-1].rt, prod[i].rt_balise)[1]
-                            position_modif = prod[i].startPos
-                            nb_deletions = "~"*extract_deletion(modif[0])
-                            content = extract_content(modif[0]).replace("␣", " ")
-                            modif = modif[0].replace(modif[0], f"<{nb_deletions}{content}>")
-                            #prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "AS", len(nb_deletions))
-                            prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "AS", len(nb_deletions), prod[i].endPos)
-
-                            
-                        elif mod.__contains__("</AP>") : 
-                            modif = extract_tags(find_difference(prod[i-1].rt, prod[i].rt_balise)[0], "AP")
-                            position_modif = find_difference(prod[i-1].rt, prod[i].rt_balise)[1]
-                            nb_deletions = "~"*extract_deletion(modif[0])
-                            content = extract_content(modif[0])
-                            modif = modif[0].replace(modif[0], f"<{nb_deletions}{content}>")
-                            #prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "AP", len(nb_deletions))
-                            prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "AP", len(nb_deletions), prod[i].endPos)
-
-                            
-                            
-                            
-                            
-                            
-                            
-                        elif mod.__contains__("</IW>") : 
-                            
-                            modification = extract_tags(find_difference(prod[i-1].rt, prod[i].rt_balise)[0], "IW")
-                            
-                            if modification.__contains__("</ID>") : 
-                                
-                                nb_char_avant_suppr, nb_suppr = detecter_rb(prod[i].charBurst)
-                                n = nb_suppr - nb_char_avant_suppr
-                                prod[i-1].rt_balise = prod[i-1].rt_balise[0:len(prod[i-1].rt_balise)-n]
-                                modif = process_deletions(prod[i].charBurst).replace("␣", " ")
-                                #prod[i].rt_balise = prod[i-1].rt_balise + "|" + modif
-                                
-                            else : 
-                                modif = modification
-                            
-                            position_modif = find_difference(prod[i-1].rt, prod[i].rt_balise)[1]
-                            try : 
-                                nb_deletions = "~"*extract_deletion(modif[0])
-                            except IndexError : 
-                                nb_deletions = ''
-                            try : 
-                                content = extract_content(modif[0])
-                            except IndexError : 
-                                content = process_deletions(prod[i].charBurst).replace("␣", " ")
-                            try : 
-                                modif = modif[0].replace(modif[0], "{" + f"{nb_deletions}{content}" + "}")
-                            except IndexError : 
-                                modif = "{" + f"{nb_deletions}{content}" + "}"
-                            #prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "IS", len(content))
-                            prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "IS", len(content), prod[i].endPos)
-
-                            
-                            '''modif = extract_tags(find_difference(prod[i-1].rt, prod[i].rt_balise)[0], "IW")
-                            position_modif = find_difference(prod[i-1].rt, prod[i].rt_balise)[1]
-                            nb_deletions = "~"*extract_deletion(modif[0])
-                            content = extract_content(modif[0])
-                            modif = modif[0].replace(modif[0], "{" + f"{nb_deletions}{content}" + "}")
-                            prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "IW", len(content))'''
-                        
-                        
-                        
-                        elif mod.__contains__("</IS>") : 
-                            
-                            modification = extract_tags(find_difference(prod[i-1].rt, prod[i].rt_balise)[0], "IS")
-                            
-                            if modification.__contains__("</ID>") : 
-                                
-                                nb_char_avant_suppr, nb_suppr = detecter_rb(prod[i].charBurst)
-                                n = nb_suppr - nb_char_avant_suppr
-                                prod[i-1].rt_balise = prod[i-1].rt_balise[0:len(prod[i-1].rt_balise)-n]
-                                modif = process_deletions(prod[i].charBurst).replace("␣", " ")
-                                #prod[i].rt_balise = prod[i-1].rt_balise + "|" + modif
-                                
-                            else : 
-                                #modif = modification
-                                modif = process_deletions(prod[i].charBurst).replace("␣", " ")
-                            
-                            position_modif = find_difference(prod[i-1].rt, prod[i].rt_balise)[1]
-                            try : 
-                                #nb_deletions = "~"*extract_deletion(modif[0])
-                                nb_deletions = n
-                            except IndexError : 
-                                #nb_deletions = ''
-                                nb_deletions = n
-                            try : 
-                                #content = extract_content(modif[0])
-                                content = modif
-                            except IndexError : 
-                                #content = process_deletions(prod[i].charBurst).replace("␣", " ")
-                                content = modif
-                            try : 
-                                #modif = modif[0].replace(modif[0], "{" + f"{nb_deletions}{content}" + "}")
-                                modif = "{" + modif + "}"
-                            except IndexError : 
-                                #modif = "{" + f"{nb_deletions}{content}" + "}"
-                                modif = "{" + modif + "}"
-                                
-                            #prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "IS", len(content))
-                            prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "IS", len(content), prod[i].endPos)
-
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-        
-                        elif mod.__contains__("</BD>") : 
-                            modif = extract_tags(find_difference(prod[i-1].rt, prod[i].rt_balise)[0], "BD")
-                            position_modif = prod[i].startPos
-                            nb_deletions = "#"*extract_deletion(modif[0])
-                            modif = nb_deletions
-                            prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif-len(nb_deletions), modif, "BD", len(nb_deletions), prod[i].endPos)
-
-                            
-                        elif mod.__contains__("</DD>") : 
-                            modif = extract_tags(find_difference(prod[i-1].rt, prod[i].rt_balise)[0], "DD")
-                            position_modif = prod[i].startPos
-                            nb_deletions = "#"*extract_deletion(modif[0])
-                            modif = nb_deletions
-                            prod[i].rt_balise = calculate_insertion_position(prod[i-1].rt, prod[i-1].rt_balise, position_modif, modif, "DD", len(nb_deletions), prod[i].endPos)
-
-
-
-
-
-                        elif mod.__contains__("</ID>") : 
-                            
-                            nb_char_avant_suppr, nb_suppr = detecter_rb(prod[i].charBurst)
-                            n = nb_suppr - nb_char_avant_suppr
-                            prod[i-1].rt_balise = prod[i-1].rt_balise[0:len(prod[i-1].rt_balise)-n]
-                            
-                            if nb_char_avant_suppr < nb_suppr : 
-                                print("RB")
-
-                            print("charBurst : ")
-                            print(prod[i].charBurst)
-                            
-                            modif = process_deletions(prod[i].charBurst).replace("␣", " ")
-                            prod[i].rt_balise = prod[i-1].rt_balise + "|" + modif
-                            
-                      
-                        
-                        else : 
-                            modif = find_difference(prod[i-1].rt, prod[i].rt_balise)[0]
-                            prod[i].rt_balise = prod[i-1].rt_balise + modif
-
+                else : 
+                    if prod[i].startPos == prod[i-1].docLength : 
+                        prod[i].categ == "P"
+                    elif prod[i-1].startPos <= prod[i].startPos <= prod[i-1].endPos : 
+                        prod[i].categ == "R"
                     else : 
-                        
-                        modif = prod[i].burst
-                        prod[i].rt_balise = mod.replace(modif, f"|{modif}")
-                        
-                        
-                    if prod[i].ID == "P+S1" : 
-                        print(prod[i].n_burst)
-                        print(prod[i].cat_error)
-                        print(mod)
-                        print(modif)
-                        print(f"[{prod[i].startPos} ; {prod[i].endPos}]")
-                        print()
-                        print("==================================")
-                        print(prod[i].rt)
-                        print()
-                        print(prod[i].rt_balise)
-                        print("-"*120)
-                        
+                        prod[i].categ == "RB"
+                    
+                    
+                    if prod[i].startPos > prod[i-1].docLength : 
+                        prod[i].startPos = prod[i-1].docLength
 
 
+                    chaine_avant = prod[i-1].rt[0:prod[i].startPos]
+                    chaine_apres = prod[i-1].rt[prod[i].startPos::]
+                    modif = prod[i].charBurst.replace("␣", " ")
+                    chaine_avant_ajustee, chaine_apres_ajustee = extraire_sequence(prod[i-1].rt_balise, chaine_avant)
 
+                    if chaine_apres_ajustee.startswith(">") : 
+                        chaine_avant_ajustee = chaine_avant_ajustee + ">"
+                        chaine_apres_ajustee = chaine_apres_ajustee[1:]
+                        
+                    if chaine_apres_ajustee.startswith("}") : 
+                        chaine_avant_ajustee = chaine_avant_ajustee + "}"
+                        chaine_apres_ajustee = chaine_apres_ajustee[1:]
 
-        
-        
-    
-    
-    
-    
-    
-    
-    
-    '''for personne, prod in tqdm(annotation_erreurs.items(), desc="Sauvegarde de l'annotation") : 
-        
-        chemin = f"donnees_annotees/{personne}.csv"
-    
-        with open (chemin, "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(['ID', 'n_burst', 'burst', 'charBurst', 'categ', 
-                             'erreur', 'cat_error', 'token_erronne', 'nb_char', 'nb_words', 'type_operation', 'nb_deletion', 'abs_position', 'rel_position', 'scope',
-                             'lemme', 'pos_suppose', 'pos_reel', 'longueur', 'contexte', 'correction', 
-                             'startPos', 'endPos', 'docLength' 
-                             'debut_burst', 'duree_burst', 'duree_pause', 'duree_cycle', 'pct_burst', 'pct_pause', 'longueur_burst', 'ratio', 'outil', 'charge'])
+                    if prod[i].startPos == prod[i-1].docLength : 
+                        modif = "|" + modif
+                    else : 
+                        if len(prod[i].burst.strip()) == 1 or prod[i].charBurst == "␣" : 
+                            modif = "<" + modif + ">"
+                        else : 
+                            modif = "{" + modif + "}"
+                    
+                    
+                    prod[i].rt_balise = chaine_avant_ajustee + modif + chaine_apres_ajustee
+
+            texte = prod[i].rt_balise
             
-            for an in prod :
-                writer.writerow([an.ID, an.n_burst, an.burst, an.charBurst, an.categ, 
-                                 an.erreur, an.cat_error, an.token_erronne, an.nb_char, an.nb_words, an.type_operation, an.nb_deletion, an.abs_position, an.rel_position, an.scope, 
-                                 an.lemme, an.pos_suppose, an.pos_reel, an.longueur, an.contexte, an.correction, 
-                                 an.startPos, an.endPos, an.docLength, 
-                                 an.debut_burst, an.duree_burst, an.duree_pause, an.duree_cycle, an.pct_burst, an.pct_pause, an.longueur_burst, an.ratio, an.outil, an.charge])'''
+            
+            
+            
+            
+        texte_avec_char_suppr = process_deletions(texte)
+        
+        print(texte_avec_char_suppr)
+        print()
+        print("-"*120)
+        print()
+            
+            
+            
+            
+            
+            
+            
+        
+        textes_reconstruits[personne] = texte
+        
+    #print(textes_reconstruits)
+    
+    
+    
+    
 
-
-
+    
 
 if __name__ == "__main__":
     main()
