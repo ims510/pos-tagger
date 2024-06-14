@@ -12,12 +12,11 @@ Created on Sat Jun  1 10:02:35 2024
 
 from ch_enrichir_donnees import ouvrir_csv, csv_to_lines, combiner_lignes, enrichir_productions, get_persons, trier_nburst, recuperer_productions
 from typing import Dict, List
-from ch_datastructure import Diff, Production, Annotation
-from ch_outils_balisage_rev import corriger_chaine, corriger_chaine_avec_balises, detecter_rb, difference_between, get_position_char_unique, remplacer_balise_si, get_nb_char, find_difference, extract_tags, extract_deletion,extract_char,  extract_content, calculate_insertion_position, process_deletions, supprimer_caracteres, extraire_sequence
+from ch_datastructure import Production, Annotation
+from ch_outils_balisage import corriger_chaine_avec_balises, detecter_rb, get_position_char_unique, remplacer_balise_si, get_nb_char, process_deletions, extraire_sequence
 from tqdm import tqdm
 import re
-import csv
-
+import os
 
 
 def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Dict[str, List[Production]] :
@@ -96,10 +95,6 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                         
                         annotations.append(an)
                         
-                        #print(an)
-                        #print(prod[i].rt_balise)
-                        #print("-"*150)
-
                     # Sinon (si son charBurst ne commence par ⌫) :
                     else :
 
@@ -502,12 +497,6 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None, 
                             rt = prod[i].rt, rt_balise = prod[i].rt_balise)
                             
-                        #prod[i].rt_balise = rt_balise
-                        
-                        '''an = Annotation(ID = prod[i].ID, charge = prod[i].charge, outil = prod[i].outil, n_burst = prod[i].n_burst, debut_burst = prod[i].debut_burst, duree_burst = prod[i].duree_burst, duree_pause = prod[i].duree_pause, duree_cycle = prod[i].duree_cycle, pct_burst = prod[i].pct_burst, pct_pause = prod[i].pct_pause, longueur_burst = prod[i].longueur_burst, burst = prod[i].burst, startPos = prod[i].startPos, endPos = prod[i].endPos, docLength = prod[i].docLength, categ = prod[i].categ, charBurst = prod[i].charBurst, ratio = prod[i].ratio, 
-                        erreur = prod[i].erreur, cat_error = "IS", token_erronne = prod[i].token_erronne, lemme = prod[i].lemme, pos_suppose = prod[i].pos_suppose, pos_reel = prod[i].pos_reel, longueur = prod[i].longueur, contexte = prod[i].contexte, correction = prod[i].correction, 
-                        nb_char = char, nb_words = mots, type_operation = operation, nb_deletion = suppr, abs_position = None, rel_position = None, scope = None)
-                        '''
                         annotations.append(an)
                         
 
@@ -806,18 +795,129 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
             if annotation not in annotations_sans_doublons : 
                 annotations_sans_doublons.append(annotation)
 
-        # Trier les productions par startPos croissante
-        #result = annotations_sans_doublons.sort(key=lambda x: x.startPos)
-        #liste_triee = sorted(annotations_sans_doublons, key=lambda x: (x.ID, x.startPos))
-        #print(liste_triee)
-        
-    
         resultat[personne] = annotations_sans_doublons
-        #resultat[personne] = result
 
-    #print(resultat)
     return resultat
         
+
+
+def reconstruire_textes(dico: Dict) -> Dict : 
+    """Reconstruit les textes de chaque personne avec les erreurs annotées
+
+    Parameters
+    ----------
+    dico : Dict
+        dictionnaire où la clé est la personne et la valeur la liste des Productions produites par cette personne
+
+    Returns
+    -------
+    Dict
+        dictionnaire où la clé est la personne et la valeur le texte reconstruit avec les erreurs annotées
+    """
+    
+    # Initialiser un dictionnaire pour stocker les textes reconstruits
+    textes_reconstruits = {}
+    
+    # Pour chaque personne : 
+    for personne, prod in tqdm(dico.items(), desc="Reconstruction des textes annotés") : 
+
+        # Pour chaque production
+        for i in range(0, len(prod)) :
+            
+            # Si la production ne contient pas d'erreur liée aux données d'origine : 
+            if prod[i].charBurst != "Err :501" :
+                
+                # Initialiser le docLenght à la longueur du running text de la production afin d'éviter les erreurs liées aux données
+                prod[i].docLength = len(prod[i].rt)
+
+                # Traiter les 2 premières productions en les concaténant avec des pipes
+                if prod[i].n_burst == 1 or prod[i].n_burst == 2 : 
+                    modif = prod[i].burst
+                    prod[i].rt_balise = prod[i].rt_balise.replace(modif, f"|{modif}|")
+
+                # Pour les autres productions : 
+                else : 
+                    
+                    # Corriger la catégorie de production
+                    if prod[i].startPos == prod[i-1].docLength : 
+                        prod[i].categ == "P"
+                    elif prod[i-1].startPos <= prod[i].startPos <= prod[i-1].endPos : 
+                        prod[i].categ == "R"
+                    else : 
+                        prod[i].categ == "RB"
+                    
+                    # Corriger la position de départ lorsqu'elle est plus élevée que la longueur du texte de la production précédente
+                    if prod[i].startPos > prod[i-1].docLength : 
+                        prod[i].startPos = prod[i-1].docLength
+
+                    # Identifier la modification à ajouter ainsi que la partie précédente
+                    chaine_avant = prod[i-1].rt[0:prod[i].startPos]
+                    modif = prod[i].charBurst.replace("␣", " ")
+                    
+                    # Aligner les parties précédant et suivant la modification avec les caractères spéciaux
+                    chaine_avant_ajustee, chaine_apres_ajustee = extraire_sequence(prod[i-1].rt_balise, chaine_avant)
+
+                    # Gérer les cas où la modification intervient à l'intérieur de parties de textes ajoutées a posteriori
+                    if chaine_apres_ajustee.startswith(">") : 
+                        chaine_avant_ajustee = chaine_avant_ajustee + ">"
+                        chaine_apres_ajustee = chaine_apres_ajustee[1:]
+                    if chaine_apres_ajustee.startswith("}") : 
+                        chaine_avant_ajustee = chaine_avant_ajustee + "}"
+                        chaine_apres_ajustee = chaine_apres_ajustee[1:]
+
+                    # Si la production est ajoutée à la suite du texte, la séparer du reste du texte par un pipe
+                    if prod[i].startPos == prod[i-1].docLength : 
+                        modif = "|" + modif
+                    # Sinon (si la production est insérée à l'intérieur du texte existant) : 
+                    else : 
+                        # Si la chaîne insérée est une lettre/espace/ponctuation ajoutée, l'annoter entre chevrons
+                        if len(prod[i].burst.strip()) == 1 or prod[i].charBurst == "␣" : 
+                            modif = "<" + modif + ">"
+                        # Sinon (si la chaîne insérée est un mot ou une suite de mots), l'annoter entre accolades
+                        else : 
+                            modif = "{" + modif + "}"
+                    
+                    # Incrémenter le running text balisé de la production avec la modification
+                    prod[i].rt_balise = chaine_avant_ajustee + modif + chaine_apres_ajustee
+
+            # Enregistrer le dernier running text balisé de la personne dans une variable "texte"
+            texte = prod[i].rt_balise
+
+        # Effectuer les suppressions
+        texte_avec_char_suppr = process_deletions(texte)
+        textes_reconstruits[personne] = texte_avec_char_suppr
+        
+    return textes_reconstruits
+    
+
+
+def enregistrer_dictionnaire(dictionnaire: Dict) -> None :
+    """Enregistre les textes reconstruits de chaque personne dans un fichier dont le nom est l'identifiant du participant
+
+    Parameters
+    ----------
+    dictionnaire : Dict
+        dictionnaire où la clé est la personne et la valeur le texte reconstruit qu'il a tapé
+
+    Returns
+    -------
+    None
+    """
+    
+    # Créer le dossier "Textes_reconstruits" s'il n'existe pas
+    dossier = "Textes_reconstruits"
+    if not os.path.exists(dossier) :
+        os.makedirs(dossier)
+    
+    # Pour chaque clé dans le dictionnaire, créer un fichier texte
+    for cle, valeur in dictionnaire.items() :
+        # Construire le chemin complet du fichier
+        chemin_fichier = os.path.join(dossier, f"{cle}.txt")
+        
+        # Écrire la valeur dans le fichier
+        with open(chemin_fichier, 'w', encoding='utf-8') as fichier :
+            fichier.write(str(valeur))
+
 
 
 def main() :
@@ -846,89 +946,11 @@ def main() :
     # Baliser le texte de chaque personne en fonction des types d'erreurs
     annotation_erreurs = baliser_erreurs(prods_par_personne)
     
+    # Reconstruire les textes avec les erreurs
+    dico_textes_avec_erreurs = reconstruire_textes(annotation_erreurs)
     
-    
-    
-    
-    textes_reconstruits = {}
-    
-    # Reconstruire le texte avec les annotations des pauses et des erreurs
-    for personne, prod in tqdm(annotation_erreurs.items(), desc="Reconstruction du texte annoté") : 
-
-        for i in range(0, len(prod)) :
-                            
-            if prod[i].charBurst != "Err :501" :
-                
-                prod[i].docLength = len(prod[i].rt)
-
-                if prod[i].n_burst == 1 or prod[i].n_burst == 2 : 
-                    modif = prod[i].burst
-                    prod[i].rt_balise = prod[i].rt_balise.replace(modif, f"|{modif}|")
-
-                else : 
-                    if prod[i].startPos == prod[i-1].docLength : 
-                        prod[i].categ == "P"
-                    elif prod[i-1].startPos <= prod[i].startPos <= prod[i-1].endPos : 
-                        prod[i].categ == "R"
-                    else : 
-                        prod[i].categ == "RB"
-                    
-                    
-                    if prod[i].startPos > prod[i-1].docLength : 
-                        prod[i].startPos = prod[i-1].docLength
-
-
-                    chaine_avant = prod[i-1].rt[0:prod[i].startPos]
-                    chaine_apres = prod[i-1].rt[prod[i].startPos::]
-                    modif = prod[i].charBurst.replace("␣", " ")
-                    chaine_avant_ajustee, chaine_apres_ajustee = extraire_sequence(prod[i-1].rt_balise, chaine_avant)
-
-                    if chaine_apres_ajustee.startswith(">") : 
-                        chaine_avant_ajustee = chaine_avant_ajustee + ">"
-                        chaine_apres_ajustee = chaine_apres_ajustee[1:]
-                        
-                    if chaine_apres_ajustee.startswith("}") : 
-                        chaine_avant_ajustee = chaine_avant_ajustee + "}"
-                        chaine_apres_ajustee = chaine_apres_ajustee[1:]
-
-                    if prod[i].startPos == prod[i-1].docLength : 
-                        modif = "|" + modif
-                    else : 
-                        if len(prod[i].burst.strip()) == 1 or prod[i].charBurst == "␣" : 
-                            modif = "<" + modif + ">"
-                        else : 
-                            modif = "{" + modif + "}"
-                    
-                    
-                    prod[i].rt_balise = chaine_avant_ajustee + modif + chaine_apres_ajustee
-
-            texte = prod[i].rt_balise
-            
-            
-            
-            
-            
-        texte_avec_char_suppr = process_deletions(texte)
-        
-        print(texte_avec_char_suppr)
-        print()
-        print("-"*120)
-        print()
-            
-            
-            
-            
-            
-            
-            
-        
-        textes_reconstruits[personne] = texte
-        
-    #print(textes_reconstruits)
-    
-    
-    
-    
+    # Enregistrer les textes de chaque personne dans un fichier différent
+    enregistrer_dictionnaire(dico_textes_avec_erreurs)
 
     
 
