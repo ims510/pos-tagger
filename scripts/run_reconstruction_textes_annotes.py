@@ -10,10 +10,10 @@ Created on Sat Jun  1 10:02:35 2024
 
 
 
-from ch_enrichir_donnees import ouvrir_csv, csv_to_lines, combiner_lignes, enrichir_productions, get_persons, trier_nburst, recuperer_productions
+from enrichir_donnees_lib import ouvrir_csv, csv_to_lines, combiner_lignes, enrichir_productions, get_persons, trier_nburst, recuperer_productions
 from typing import Dict, List
-from ch_datastructure import Production, Annotation
-from ch_outils_balisage import corriger_chaine_avec_balises, detecter_rb, get_position_char_unique, remplacer_balise_si, get_nb_char, process_deletions, extraire_sequence
+from datastructure_lib import Production, Annotation
+from outils_balisage_lib import corriger_chaine_avec_balises, detecter_rb, get_position_char_unique, remplacer_balise_si, get_nb_char, process_deletions, extraire_sequence
 from tqdm import tqdm
 import argparse
 import re

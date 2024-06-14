@@ -11,12 +11,12 @@ Created on Tue May 28 09:42:42 2024
 
 
 
-from ch_identify_errors import ouverture_csv
-from ch_datastructure import Ligne, Production, Diff, AnLine
+from identify_errors_lib import ouverture_csv
+from datastructure_lib import Ligne, Production, Diff, AnLine
 from typing import List, Dict
 from tqdm import tqdm
 import csv
-from ch_pos_tagger import get_persons, add_burst_to_text
+from run_pos_tagger import get_persons, add_burst_to_text
 import re
 
 
