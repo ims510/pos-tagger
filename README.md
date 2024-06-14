@@ -2,6 +2,18 @@
 
 ## Introduction
 
+Ce dépôt contient les scripts ayant servi au projet ANR pro text d'analyse automatique de données d'écriture en temps réel.
+
+Vous trouverez
+
+
+
+
+
+
+
+
+
 Ce dépôt git a pour but de présenter 2 outils pour l'analyse automatique de données d'écriture en temps réel :
 
 1. un POS-tagger
