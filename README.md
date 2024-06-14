@@ -26,7 +26,7 @@ python3 pos_tagger.py -i ../data/CLEAN_csv_planification.tsv -o ../data/annotati
 
 ## Chunking
 
-
+Dans ce dossier, vous trouverez un
 
 
 

@@ -18,6 +18,8 @@ from tqdm import tqdm
 import argparse
 import re
 import os
+import sys
+
 
 
 def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Dict[str, List[Production]] :
