@@ -13,7 +13,7 @@ Created on Sat Jun  1 10:02:35 2024
 from enrichir_donnees_lib import ouvrir_csv, csv_to_lines, combiner_lignes, enrichir_productions, get_persons, trier_nburst, recuperer_productions
 from typing import Dict, List
 from datastructure_lib import Production, Annotation
-from outils_balisage_lib import corriger_chaine_avec_balises, detecter_rb, get_position_char_unique, remplacer_balise_si, get_nb_char, process_deletions, extraire_sequence
+from outils_balisage_lib import corriger_chaine_avec_balises, detecter_rb, get_position_char_unique, remplacer_balise_si, get_nb_char, process_deletions, extraire_sequence, nettoyer_texte
 from tqdm import tqdm
 import argparse
 import re
@@ -833,10 +833,9 @@ def reconstruire_textes(dico: Dict) -> Dict :
                 # Initialiser le docLenght à la longueur du running text de la production afin d'éviter les erreurs liées aux données
                 prod[i].docLength = len(prod[i].rt)
 
-                # Traiter les 2 premières productions en les concaténant avec des pipes
+                # Traiter les 2 premières productions sans erreurs
                 if prod[i].n_burst == 1 or prod[i].n_burst == 2 :
-                    modif = prod[i].burst
-                    prod[i].rt_balise = prod[i].rt_balise.replace(modif, f"|{modif}|")
+                    prod[i].rt_balise = prod[i].rt
 
                 # Pour les autres productions :
                 else :
@@ -857,25 +856,26 @@ def reconstruire_textes(dico: Dict) -> Dict :
                     chaine_avant = prod[i-1].rt[0:prod[i].startPos]
                     modif = prod[i].charBurst.replace("␣", " ")
 
-                    # Aligner les parties précédant et suivant la modification avec les caractères spéciaux
-                    chaine_avant_ajustee, chaine_apres_ajustee = extraire_sequence(prod[i-1].rt_balise, chaine_avant)
-
-                    # Gérer les cas où la modification intervient à l'intérieur de parties de textes ajoutées a posteriori
-                    if chaine_apres_ajustee.startswith(">") :
-                        chaine_avant_ajustee = chaine_avant_ajustee + ">"
-                        chaine_apres_ajustee = chaine_apres_ajustee[1:]
-                    if chaine_apres_ajustee.startswith("}") :
-                        chaine_avant_ajustee = chaine_avant_ajustee + "}"
-                        chaine_apres_ajustee = chaine_apres_ajustee[1:]
+                    # Si la modification n'est pas ajoutée au début du texte :
+                    if chaine_avant != "" :
+                        # Aligner les parties précédant et suivant la modification avec les caractères spéciaux
+                        chaine_avant_ajustee, chaine_apres_ajustee = extraire_sequence(prod[i-1].rt_balise, chaine_avant)
+                    # Sinon :
+                    else :
+                        # La chaîne après ajustée correspond au running text balisé  et la chaîne avant ajustée est vide
+                        chaine_avant_ajustee, chaine_apres_ajustee = chaine_avant, prod[i-1].rt_balise
 
                     # Si la production est ajoutée à la suite du texte, la séparer du reste du texte par un pipe
                     if prod[i].startPos == prod[i-1].docLength :
                         modif = "|" + modif
+
                     # Sinon (si la production est insérée à l'intérieur du texte existant) :
                     else :
+
                         # Si la chaîne insérée est une lettre/espace/ponctuation ajoutée, l'annoter entre chevrons
                         if len(prod[i].burst.strip()) == 1 or prod[i].charBurst == "␣" :
-                            modif = "<" + modif + ">"
+                            modif = "<" + modif
+
                         # Sinon (si la chaîne insérée est un mot ou une suite de mots), l'annoter entre accolades
                         else :
                             modif = "{" + modif + "}"
@@ -883,12 +883,31 @@ def reconstruire_textes(dico: Dict) -> Dict :
                     # Incrémenter le running text balisé de la production avec la modification
                     prod[i].rt_balise = chaine_avant_ajustee + modif + chaine_apres_ajustee
 
+                    '''if prod[i].ID == "P+S2" :
+                        print(prod[i].n_burst)
+                        print(prod[i].charBurst)
+                        print("chaine_avant : ")
+                        print(chaine_avant)
+                        print("chaine_avant_ajustee : ")
+                        print(chaine_avant_ajustee)
+                        print("chaine_apres_ajustee : ")
+                        print(chaine_apres_ajustee)
+                        print("prod[i].rt : ")
+                        print(prod[i].rt)
+                        print("prod[i].rt_balise : ")
+                        print(prod[i].rt_balise)
+                        print("-"*120)'''
+
             # Enregistrer le dernier running text balisé de la personne dans une variable "texte"
             texte = prod[i].rt_balise
 
         # Effectuer les suppressions
         texte_avec_char_suppr = process_deletions(texte)
-        textes_reconstruits[personne] = texte_avec_char_suppr
+
+        # Nettoyer et corriger les annotations
+        texte_nettoye = nettoyer_texte(texte_avec_char_suppr)
+
+        textes_reconstruits[personne] = texte_nettoye
 
     return textes_reconstruits
 

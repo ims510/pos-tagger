@@ -128,7 +128,7 @@ def get_position_char_unique(chaine: str, balise: str) -> str :
                 position_str = "middle"
 
             result = (position_str, position_lettre)
-            
+
             return result
 
 
@@ -149,15 +149,15 @@ def remplacer_balise_si(match, compteur) :
     str
         La nouvelle balise <ID> avec les attributs prod et char ajoutés
     """
-    
+
     # Déterminer les attributs prod et char
     prod_value = "preceding" if compteur[0] == 0 else "local"
     contenu = match.group(2)
     longueur = len(contenu)
-    
+
     # Incrémenter le compteur
     compteur[0] += 1
-    
+
     # Retourner la nouvelle balise SI avec les attributs ajoutés
     return f'<ID scope="{prod_value}" char={longueur}>{contenu}</ID>'
 
@@ -253,7 +253,7 @@ def process_deletions(text: str) -> str :
     str
         chaine sans les caractères de suppression et avec caractères supprimés remplacés par des tildes
     """
-    
+
     special_chars = {'|', '<', '>', '{', '}'}
     result = list(text)
     i = 0
@@ -279,3 +279,26 @@ def process_deletions(text: str) -> str :
 
     # Joindre la liste en une chaîne de caractères
     return ''.join(result)
+
+
+
+def nettoyer_texte(texte: str) -> str :
+    """Referme les balises des lettres uniques ajoutées
+
+    Parameters
+    ----------
+    texte : str
+        texte final avec unqiuement des chevrons ouvrants ("<")
+
+    Returns
+    -------
+    str
+        texte final où les lettres ajoutées sont suivies d'un chevrons fermant (">")
+    """
+    import re
+    pattern = r"<~*."
+    def replacer(match):
+        return match.group() + ">"
+    texte_modifie = re.sub(pattern, replacer, texte)
+    texte_corrige = re.sub(r"<{>", "{", texte_modifie)
+    return texte_corrige
