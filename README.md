@@ -17,12 +17,12 @@ Le script `run_pos_tagger.py` permet d'identifier les erreurs et de les annoter 
 
 Commande pour lancer l'outil :
 ```sh
-python3 pos_tagger.py -i chemin/vers/le/fichier_tsv_contenant_les_donnees_originales -o chemin/vers/le/fichier_csv_de_resultats
+python3 run_pos_tagger.py -i chemin/vers/le/fichier_tsv_contenant_les_donnees_originales -o chemin/vers/le/fichier_csv_de_resultats
 ```
 
 Exemple de lancement :
 ```sh
-python3 pos_tagger.py -i CLEAN_csv_planification.tsv -o annotation_erreurs_treetagger.csv
+python3 run_pos_tagger.py -i CLEAN_csv_planification.tsv -o annotation_erreurs_treetagger.csv
 ```
 
 Le fichier csv de sortie servira à la reconstruction des textes avec les erreurs.
@@ -34,12 +34,12 @@ Le script `run_reconstruction_textes_annotes.py` permet de reconstruire les text
 
 Commande pour lancer l'outil :
 ```sh
-python3 pos_tagger.py -d chemin/vers/le/fichier_tsv_contenant_les_donnees_originales -e chemin/vers/le/fichier_csv_obtenu_avec_pos_tagger
+python3 run_reconstruction_textes_annotes.py -d chemin/vers/le/fichier_tsv_contenant_les_donnees_originales -e chemin/vers/le/fichier_csv_obtenu_avec_pos_tagger
 ```
 
 Exemple de lancement :
 ```sh
-python3 pos_tagger.py -d run_reconstruction_textes_annotes.py -e annotation_erreurs_treetagger.csv
+python3 run_reconstruction_textes_annotes.py -d CLEAN_csv_planification.tsv -e annotation_erreurs_treetagger.csv
 ```
 
 Après lancement du script, vous obtiendrez un dossier "Textes_reconstruits" contenant un fichier par participant. Chaque fichier correspond au texte que le participant a tapé, avec les annotations.
