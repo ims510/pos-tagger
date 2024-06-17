@@ -44,37 +44,14 @@ python3 pos_tagger.py -d run_reconstruction_textes_annotes.py -e annotation_erre
 
 Après lancement du script, vous obtiendrez un dossier "Textes_reconstruits" contenant un fichier par participant. Chaque fichier correspond au texte que le participant a tapé, avec les annotations.
 
+<img src="figures/arborescence.png" alt="Image de l'arborescence du dossier Textes_reconstruits" />
 
-    image exemple de l'arborescence
+<img src="figures/exemple_texte_reconstruit.png" alt="Image du texte reconstruit du participant P+S1" />
 
+#### Légende des annotations :
 
-## Visualisation
-
-Un script de visualisation permet également de transformer les fichiers obtenus en fichiers html afin de mieux comprendre le processus d'écriture.
-
-    Commande pour lancer l'outil :
-    ```sh
-    python3 pos_tagger.py -d chemin/vers/le/fichier_tsv_contenant_les_donnees_originales -e chemin/vers/le/fichier_csv_obtenu_avec_pos_tagger
-    ```
-
-    Exemple de lancement :
-    ```sh
-    python3 pos_tagger.py -d run_reconstruction_textes_annotes.py -e annotation_erreurs_treetagger.csv
-    ```
-
-
-    image du texte surligné
-
-
-
-    Légende des annotations :
-
-    "|" : marque une pause entre deux productions
-    "~" : marque un caractère qui a été supprimé
-    "<>" : lettre, espace, ou ponctuation inséré(e) a posteriori dans le texte existant
-    "{}" : mot ou séquence de mots inséré(es) a posteriori dans le texte existant
-
-
-
-
+"|" : marque une pause entre deux productions
+"~" : marque un caractère qui a été supprimé
+"<>" : lettre, espace, ou ponctuation inséré(e) a posteriori dans le texte existant
+"{}" : mot ou séquence de mots inséré(es) a posteriori dans le texte existant
 
