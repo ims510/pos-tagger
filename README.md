@@ -50,8 +50,8 @@ Après lancement du script, vous obtiendrez un dossier "Textes_reconstruits" con
 
 #### Légende des annotations :
 
-"|" : marque une pause entre deux productions
-"~" : marque un caractère qui a été supprimé
-"<>" : lettre, espace, ou ponctuation inséré(e) a posteriori dans le texte existant
-"{}" : mot ou séquence de mots inséré(es) a posteriori dans le texte existant
+- "|" : marque une pause entre deux productions
+- "~" : marque un caractère qui a été supprimé
+- "<>" : lettre, espace, ou ponctuation inséré(e) a posteriori dans le texte existant
+- "{}" : mot ou séquence de mots inséré(es) a posteriori dans le texte existant
 
