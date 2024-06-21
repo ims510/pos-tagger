@@ -35,13 +35,13 @@ Il vous demandera ensuite le nom du fichier dans lequel vous souhaitez sauvegard
 Nom du fichier csv pour sauvegarder l'annotation des erreurs :
 ```
 Tapez le nom du fichier puis appuyez sur la touche `Entrée`.
-Ce fichier csv de sortie servira à la reconstruction des textes avec les erreurs. Conservez-le précieusement !
+Ce fichier csv de sortie servira à la reconstruction des textes. Conservez-le précieusement !
 
 
 
 ## 2. Reconstruction des textes avec conservation des phénomènes d'écriture : `run_reconstruction_textes_annotes.py`
 
-Le script `run_reconstruction_textes_annotes.py` permet de reconstruire les textes tapés par les participants tout en conservant l'annotation de leurs faits et gestes.
+Le script `run_reconstruction_textes_annotes.py` permet de reconstruire les textes tapés par les participants tout en conservant l'annotation de leurs faits et gestes (pauses, suppressions, insertions, etc.).
 
 Commande pour lancer l'outil :
 ```sh
@@ -69,15 +69,15 @@ Après lancement du script, vous obtiendrez un dossier "Textes_reconstruits" con
 #### Légende des annotations :
 
 - "|" : marque une pause entre deux productions
-- "~" : marque un caractère qui a été supprimé
-- "<>" : lettre, espace, ou ponctuation inséré(e) a posteriori dans le texte existant
-- "{}" : mot ou séquence de mots inséré(es) a posteriori dans le texte existant
+- "~" : marque un caractère qui a été supprimé (autant de ~ que de caractères supprimés)
+- "<>" : caractère unique (lettre, espace, ou ponctuation) inséré a posteriori dans le texte existant
+- "{}" : séquence de plusieurs caractères (partie de mot, mot complet ou suite de mots) insérée a posteriori dans le texte existant
 
 
 
 ## 3. Visualisation des textes annotés avec des couleurs : `run_visualisation.py`
 
-Le script `run_visualisation.py` permet de transformer les fichiers txt des textes reconstruits obtenus avec `run_reconstruction_textes_annotes.py` en fichiers html où les annotations sont rendues plus visibles et ainsi mieux observables avec l'application de styles.
+Le script `run_visualisation.py` permet de transformer les fichiers txt des textes reconstruits obtenus avec `run_reconstruction_textes_annotes.py` en fichiers html où les annotations sont rendues plus visibles et ainsi mieux observables avec l'application de styles. Cette étape n'est pas nécessaire au traitement dans le but du chunking puisque ce sont les fichiers txt qui seront fournis en input du chunking. Néanmoins, elle permet de mieux comprendre les annotations avec une représentation plus attractive.
 
 Commande pour lancer l'outil :
 ```sh
@@ -99,7 +99,7 @@ Voici un exemple de fichier html obtenu :
 #### Rappel de la légende des annotations :
 
 - "|" : marque une pause entre deux productions
-- "~" : marque un caractère qui a été supprimé
-- "<>" : lettre, espace, ou ponctuation inséré(e) a posteriori dans le texte existant
-- "{}" : mot ou séquence de mots inséré(es) a posteriori dans le texte existant
+- "~" : marque un caractère qui a été supprimé (autant de ~ que de caractères supprimés)
+- "<>" : caractère unique (lettre, espace, ou ponctuation) inséré a posteriori dans le texte existant
+- "{}" : séquence de plusieurs caractères (partie de mot, mot complet ou suite de mots) insérée a posteriori dans le texte existant
 
