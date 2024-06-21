@@ -5,11 +5,11 @@
 Ce dépôt contient les scripts ayant servi au projet ANR pro text d'analyse automatique de données d'écriture en temps réel.
 Les scripts préfixés par "run_" sont des scripts exécutables. Les scripts suffixés par "_lib" sont des scripts appelés par les scripts exécutables.
 
-Il y a 3 script exécutables :
+Il y a 3 script exécutables, correspondant à trois étapes de traitement des données :
 
-1. run_pos_tagger.py
-2. run_reconstruction_textes_annotes.py
-3. run_visualisation.py
+1. Annotation des erreurs : `run_pos_tagger.py`
+2. Reconstruction des textes avec conservation des phénomènes d'écriture : `run_reconstruction_textes_annotes.py`
+3. Visualisation des textes annotés avec des couleurs : `run_visualisation.py`
 
 
 
