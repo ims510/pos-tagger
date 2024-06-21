@@ -7,7 +7,6 @@ from datastructure_lib import Ligne, Token
 from typing import List, Dict, Tuple
 import csv
 from tqdm import tqdm
-import argparse
 import os
 import sys
 
@@ -423,14 +422,12 @@ def save_to_csv(tokens: List[Token], fichier: str) -> None :
 
 def main() :
 
-    # Gérer les arguments
-    parser = argparse.ArgumentParser(description="Identification des erreurs")
-    parser.add_argument("-i", "--input-file", type=str, default="CLEAN_csv_planification.tsv", help="Chemin du fichier csv d'entrée")
-    parser.add_argument("-o", "--output-file", type=str, default="annotation_erreurs_treetagger.csv", help="Chemin du fichier csv de sortie")
-    args = parser.parse_args()
+    # Demander à l'utilisateur les fichiers d'entrée et de sortie
+    input_file = input('Nom du fichier csv ou tsv contenant les données : ')
+    output_file = input("Nom du fichier csv pour sauvegarder l'annotation des erreurs : ")
 
     # Ouvrir le fichier csv et en extraire les lignes
-    liste_lignes = ouverture_csv(args.input_file)
+    liste_lignes = ouverture_csv(input_file)
 
     # Trouver les bursts produits par chaque participant
     participants = get_persons(liste_lignes)
@@ -439,7 +436,7 @@ def main() :
     erreurs = annotate_errors(liste_lignes, participants)
 
     # Sauvegarde de l'analyse dans un fichier csv
-    save_to_csv(erreurs, args.output_file)
+    save_to_csv(erreurs, output_file)
 
 
 

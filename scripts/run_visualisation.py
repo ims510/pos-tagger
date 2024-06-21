@@ -1,3 +1,7 @@
+'''Ce script permet de transformer des fichiers txt contenant des textes annotés en fichiers html avec des couleurs pour mieux visualiser les annotations.'''
+
+
+
 import os
 
 def surligner_texte(content):
@@ -5,24 +9,58 @@ def surligner_texte(content):
     i = 0
     while i < len(content):
         if content[i] == '{':
-            highlighted_content += '<span style="background-color: lightblue;">{'
+            start = i
             i += 1
+            tilde_only = True
+            temp_content = '{'
             while i < len(content) and content[i] != '}':
-                highlighted_content += content[i]
+                if content[i] == '~':
+                    temp_content += '<span style="color: red; font-weight: bold;">~</span>'
+                elif content[i] == '<':
+                    temp_content += '<span style="background-color: lightgreen;">&lt;'
+                    i += 1
+                    while i < len(content) and content[i] != '>':
+                        if content[i] == '~':
+                            temp_content += '<span style="color: red; font-weight: bold;">~</span>'
+                        elif content[i] == '|':
+                            temp_content += '<span style="font-weight: bold; color: black; background-color: yellow;">|</span>'
+                        else:
+                            temp_content += content[i]
+                        i += 1
+                    if i < len(content) and content[i] == '>':
+                        i += 1
+                        temp_content += '&gt;'
+                    temp_content += '</span>'
+                elif content[i] == '|':
+                    temp_content += '<span style="font-weight: bold; color: black; background-color: yellow;">|</span>'
+                    tilde_only = False
+                else:
+                    temp_content += content[i]
+                    if content[i] not in {'~', '|', '<', '>'}:
+                        tilde_only = False
                 i += 1
-            highlighted_content += '}'
             if i < len(content) and content[i] == '}':
+                temp_content += '}'
                 i += 1
-            highlighted_content += '</span>'
+            
+            if tilde_only:
+                highlighted_content += f'<span style="background-color: lightcoral;">{temp_content}</span>'
+            else:
+                highlighted_content += f'<span style="background-color: lightblue;">{temp_content}</span>'
         elif content[i] == '<':
-            highlighted_content += '<span style="background-color: lightgreen;"><'
+            highlighted_content += '<span style="background-color: lightgreen;">&lt;'
             i += 1
             while i < len(content) and content[i] != '>':
-                highlighted_content += content[i]
+                if content[i] == '~':
+                    highlighted_content += '<span style="color: red; font-weight: bold;">~</span>'
+                elif content[i] == '|':
+                    highlighted_content += '<span style="font-weight: bold; color: black; background-color: yellow;">|</span>'
+                else:
+                    highlighted_content += content[i]
                 i += 1
-            highlighted_content += '>'
             if i < len(content) and content[i] == '>':
                 i += 1
+                highlighted_content += '&gt;'
             highlighted_content += '</span>'
         elif content[i] == '|':
             highlighted_content += '<span style="font-weight: bold; color: black; background-color: yellow;">|</span>'
@@ -31,7 +69,7 @@ def surligner_texte(content):
             highlighted_content += '<span style="color: red; font-weight: bold;">~</span>'
             i += 1
         else:
-            highlighted_content += content[i]
+            highlighted_content += content[i].replace('<', '&lt;').replace('>', '&gt;')
             i += 1
     return highlighted_content
 
@@ -77,9 +115,6 @@ def traiter_fichiers(dossier_source, dossier_sortie):
 
     print(f'Tous les fichiers ont été traités et enregistrés dans {dossier_sortie}.')
 
-
-
-
-dossier_source = 'Textes_reconstruits'  # Remplacez par le chemin de votre dossier source
-dossier_sortie = 'Textes_reconstruits_visualisation'  # Remplacez par le chemin de votre dossier de sortie
+dossier_source = input('Nom du dossier contenant les textes reconstruits : ')
+dossier_sortie = 'Textes_reconstruits_visualisation'
 traiter_fichiers(dossier_source, dossier_sortie)
