@@ -741,7 +741,6 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
                             rt_avant = rt_avant_revision[0:len(rt_avant_revision)+(nb_char_avant_suppr-nb_suppr)]
 
                             # On trouve l'indice de début de la partie du running text qui suit la modification
-                            #test_pendant = rt_balise_ci_espaces_milieu[len(rt_avant_revision)+(nb_char_avant_suppr-nb_suppr)::].replace(rt_apres_revision, "")
                             index = rt_balise_ci_espaces_milieu[len(rt_avant_revision)+(nb_char_avant_suppr-nb_suppr)::].find(rt_apres_revision)
 
                             # On s'en sert pour reconstituer la modification balisée
@@ -786,10 +785,9 @@ def baliser_erreurs(productions_par_personne: Dict[str, List[Production]]) -> Di
 
                             annotations.append(an)
 
+                # Sinon, on affiche un message d'erreur avec le numéro de burst de la production
                 else :
-
                     print(f"Non-traité : {prod[i].n_burst}")
-
 
         # Supprimer les doublons éventuels
         annotations_sans_doublons = []
@@ -910,10 +908,6 @@ def reconstruire_textes(dico: Dict) -> Dict :
                     else : 
                         # La chaîne après ajustée correspond au running text balisé  et la chaîne avant ajustée est vide
                         chaine_avant_ajustee, chaine_apres_ajustee = chaine_avant, prod[i-1].rt_balise
-                    
-                    '''if chaine_apres_ajustee.startswith("}") : 
-                        chaine_avant_ajustee = chaine_avant_ajustee + "}"
-                        chaine_apres_ajustee = chaine_apres_ajustee[1:]'''
                         
                     # Si la production est ajoutée à la suite du texte, la séparer du reste du texte par un pipe
                     if prod[i].startPos == prod[i-1].docLength :
@@ -943,37 +937,17 @@ def reconstruire_textes(dico: Dict) -> Dict :
 
                     # Incrémenter le running text balisé de la production avec la modification
                     prod[i].rt_balise = chaine_avant_ajustee + modif + chaine_apres_ajustee
-                    
-                    '''if prod[i].ID == "P+S1" : 
-                        print(prod[i].n_burst)
-                        print(prod[i].charBurst)
-                        print("chaine_avant : ")
-                        print(chaine_avant)
-                        print("chaine_apres : ")
-                        print(chaine_apres)
-                        print("chaine_avant_ajustee : ")
-                        print(chaine_avant_ajustee)
-                        print("chaine_apres_ajustee : ")
-                        print(chaine_apres_ajustee)
-                        print("prod[i].rt : ")
-                        print(prod[i].rt)
-                        print("prod[i].rt_balise : ")
-                        print(prod[i].rt_balise)
-                        print("-"*120)'''
 
             # Enregistrer le dernier running text balisé de la personne dans une variable "texte"
             texte = prod[i].rt_balise
         
         # Effectuer les suppressions par backspaces
         texte_avec_char_suppr = process_deletions(texte)
-        
-        # 
-        
+
         # Nettoyer et corriger les annotations
         texte_nettoye = nettoyer_texte(texte_avec_char_suppr)
-        '''print(texte_nettoye)
-        print("-"*120)'''
         
+        # Enregistrer le texte de chaque personne dans le dictionnaire
         textes_reconstruits[personne] = texte_nettoye
 
     return textes_reconstruits

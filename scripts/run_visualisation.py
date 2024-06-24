@@ -4,76 +4,182 @@
 
 import os
 
-def surligner_texte(content):
+
+
+def surligner_texte(content: str) -> str :
+    """Surligne le texte en ajoutant des balises HTML avec des styles CSS pour visualiser les annotations.
+
+    Parameters
+    ----------
+    content : str
+        contenu du fichier texte à surligner
+
+    Returns
+    -------
+    str
+        contenu avec les balises HTML ajoutées pour le surlignement
+    """
+
+    # Initialiser une variable pour stocker le texte surligné
     highlighted_content = ""
+
+    # Initialiser un itérateur sur le texte
     i = 0
-    while i < len(content):
-        if content[i] == '{':
+
+    # On itère sur chaque caractère du texte
+    while i < len(content) :
+
+        # Caractères déclanchant l'application d'un style :
+        # 1. Accolade ouvrante
+        # 2. Chevron ouvrant
+        # 3. Pipe
+        # 4. Tilde
+
+        # 1. Si le caractère est une accolade ouvrante :
+        if content[i] == '{' :
             start = i
             i += 1
             tilde_only = True
             temp_content = '{'
-            while i < len(content) and content[i] != '}':
-                if content[i] == '~':
+
+            # Tant qu'on ne rencontre pas d'accolade fermante, on continue d'itérer :
+            while i < len(content) and content[i] != '}' :
+
+                # On met les tildes en rouge et gras
+                if content[i] == '~' :
                     temp_content += '<span style="color: red; font-weight: bold;">~</span>'
-                elif content[i] == '<':
+
+                # Si on rencontre un chevron ouvrant :
+                elif content[i] == '<' :
+
+                    # On surligne en vert
                     temp_content += '<span style="background-color: lightgreen;">&lt;'
                     i += 1
-                    while i < len(content) and content[i] != '>':
-                        if content[i] == '~':
+
+                    # Tant qu'on ne rencontre pas de chevron fermant :
+                    while i < len(content) and content[i] != '>' :
+
+                        # On met les tildes en rouge et gras
+                        if content[i] == '~' :
                             temp_content += '<span style="color: red; font-weight: bold;">~</span>'
-                        elif content[i] == '|':
+
+                        # On met les pipes en gras et on les surligne en jaune
+                        elif content[i] == '|' :
                             temp_content += '<span style="font-weight: bold; color: black; background-color: yellow;">|</span>'
+
                         else:
                             temp_content += content[i]
+
                         i += 1
-                    if i < len(content) and content[i] == '>':
+
+                    # Si on rencontre un chevron fermant, on l'ajoute au contenu et on ferme la balise
+                    if i < len(content) and content[i] == '>' :
                         i += 1
                         temp_content += '&gt;'
                     temp_content += '</span>'
-                elif content[i] == '|':
+
+                # Si on rencontre un pipe :
+                elif content[i] == '|' :
+
+                    # On le met en gras et on le surligne en jaune
                     temp_content += '<span style="font-weight: bold; color: black; background-color: yellow;">|</span>'
                     tilde_only = False
-                else:
+
+                # Sinon on continue d'itérer
+                else :
                     temp_content += content[i]
                     if content[i] not in {'~', '|', '<', '>'}:
                         tilde_only = False
                 i += 1
-            if i < len(content) and content[i] == '}':
+
+            # Si on rencontre une accolade fermante, on l'ajoute au contenu
+            if i < len(content) and content[i] == '}' :
                 temp_content += '}'
                 i += 1
             
-            if tilde_only:
+            # Si la séquence entre accolades ne contient que des tildes :
+            if tilde_only :
+
+                # On la surligne en rouge
                 highlighted_content += f'<span style="background-color: lightcoral;">{temp_content}</span>'
-            else:
+
+            # Sinon :
+            else :
+
+                # On la surligne en bleu
                 highlighted_content += f'<span style="background-color: lightblue;">{temp_content}</span>'
-        elif content[i] == '<':
+
+        # 2. Sinon si le caractère est un chevron ouvrant :
+        elif content[i] == '<' :
+
+            # On surligne en vert
             highlighted_content += '<span style="background-color: lightgreen;">&lt;'
             i += 1
-            while i < len(content) and content[i] != '>':
-                if content[i] == '~':
+
+            # Tant qu'on ne rencontre pas de chevron fermant :
+            while i < len(content) and content[i] != '>' :
+
+                # Si on rencontre un tilde :
+                if content[i] == '~' :
+
+                    # On le met en gras et en rouge
                     highlighted_content += '<span style="color: red; font-weight: bold;">~</span>'
-                elif content[i] == '|':
+
+                # Sinon si le caractère est un pipe :
+                elif content[i] == '|' :
+
+                    # On le met en gras et on le surligne en jaune
                     highlighted_content += '<span style="font-weight: bold; color: black; background-color: yellow;">|</span>'
-                else:
+
+                # Sinon, on ne touche pas au style
+                else :
                     highlighted_content += content[i]
                 i += 1
-            if i < len(content) and content[i] == '>':
+
+            # Si on rencontre un chevron fermant, on ferme la balise
+            if i < len(content) and content[i] == '>' :
                 i += 1
                 highlighted_content += '&gt;'
             highlighted_content += '</span>'
-        elif content[i] == '|':
+
+        # 3. Sinon si le caractère est un pipe :
+        elif content[i] == '|' :
+
+            # On le met en gras et on le surligne en jaune
             highlighted_content += '<span style="font-weight: bold; color: black; background-color: yellow;">|</span>'
             i += 1
-        elif content[i] == '~':
+
+        # 4. Sinon si le caractère est un tilde :
+        elif content[i] == '~' :
+
+            # On le met en gras et en rouge
             highlighted_content += '<span style="color: red; font-weight: bold;">~</span>'
             i += 1
-        else:
+
+        # Sinon (si le caractère est un caractère "normal"), on n'applique pas de style
+        else :
             highlighted_content += content[i].replace('<', '&lt;').replace('>', '&gt;')
             i += 1
+
     return highlighted_content
 
-def traiter_fichiers(dossier_source, dossier_sortie):
+
+
+def traiter_fichiers(dossier_source: str, dossier_sortie: str) -> None :
+    """Traite tous les fichiers texte dans le dossier source, applique le surlignement et enregistre les résultats en tant que fichiers HTML dans le dossier de sortie.
+
+    Parameters
+    ----------
+    dossier_source : str
+        chemin du dossier contenant les fichiers texte à traiter
+    dossier_sortie: str
+        chemin du dossier où enregistrer les fichiers HTML surlignés
+
+    Returns
+    -------
+    None
+    """
+
     # Créer le dossier de sortie s'il n'existe pas
     if not os.path.exists(dossier_sortie):
         os.makedirs(dossier_sortie)
@@ -114,6 +220,8 @@ def traiter_fichiers(dossier_source, dossier_sortie):
                 fichier_sortie.write(contenu_html)
 
     print(f'Tous les fichiers ont été traités et enregistrés dans {dossier_sortie}.')
+
+
 
 dossier_source = input('Nom du dossier contenant les textes reconstruits : ')
 dossier_sortie = 'Textes_reconstruits_visualisation'
